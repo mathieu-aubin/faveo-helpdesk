@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Admin\helpdesk;
 
 // controllers
 use App\Http\Controllers\Common\PhpMailController;
-use App\Http\Controllers\Common\SettingsController;
 use App\Http\Controllers\Controller;
 // requests
+use App\Http\Requests\helpdesk\DiagnosRequest;
 use App\Http\Requests\helpdesk\TemplateRequest;
 use App\Http\Requests\helpdesk\TemplateUdate;
 // models
@@ -17,7 +17,7 @@ use App\Model\helpdesk\Utility\Languages;
 use Exception;
 use Illuminate\Http\Request;
 use Input;
-use Mail;
+use Lang;
 
 /**
  * TemplateController.
@@ -34,7 +34,6 @@ class TemplateController extends Controller
     public function __construct(PhpMailController $PhpMailController)
     {
         $this->PhpMailController = $PhpMailController;
-        SettingsController::smtp();
         $this->middleware('auth');
         $this->middleware('roles');
     }
@@ -53,7 +52,7 @@ class TemplateController extends Controller
 
             return view('themes.default1.admin.helpdesk.emails.template.index', compact('templates'));
         } catch (Exception $e) {
-            return view('404');
+            return redirect()->back()->with('fails', $e->getMessage());
         }
     }
 
@@ -306,7 +305,7 @@ class TemplateController extends Controller
 
             return view('themes.default1.admin.helpdesk.emails.template.formDiagno', compact('emails'));
         } catch (Exception $e) {
-            return view('404');
+            return redirect()->back()->with('fails', $e->getMessage());
         }
     }
 
@@ -317,19 +316,57 @@ class TemplateController extends Controller
      *
      * @return type
      */
-    public function postDiagno(Request $request)
+    public function postDiagno(DiagnosRequest $request)
     {
-        $email = $request->input('to');
-        if ($email == null) {
-            return redirect('getdiagno')->with('fails', 'Please provide E-mail address !');
-        }
-        // sending mail via php mailer
-        $mail = $this->PhpMailController->sendmail($from = $this->PhpMailController->mailfrom('1', '0'), $to = ['email' => $email], $message = ['subject' => 'Checking the connection', 'scenario' => 'error-report', 'content' => 'Email Received Successfully'], $template_variables = ['system_error' => 'Email Received Successfully']);
+        try {
+            $email_details = Emails::where('id', '=', $request->from)->first();
+            if ($email_details->sending_protocol == 'mail') {
+                $mail = new \PHPMailer(); // defaults to using php "mail()"
+                $mail->IsSendmail(); // telling the class to use SendMail transport
+                $mail->SetFrom($email_details->email_address, $email_details->email_name); // sender details
+                $address = $request->to; // receiver email
+                $mail->AddAddress($address);
+                $mail->Subject = $request->subject; // subject of the email
+                $body = $request->message; // body of the email
+                $mail->MsgHTML($body);
+                if (!$mail->Send()) {
+                    $return = Lang::get('lang.mailer_error').': '.$mail->ErrorInfo;
+                } else {
+                    $return = Lang::get('lang.message_has_been_sent');
+                }
+            } elseif ($email_details->sending_protocol == 'smtp') {
+                $mail = new \PHPMailer();
+                $mail->isSMTP();                                            // Set mailer to use SMTP
+                if ($email_details->smtp_validate == '1') {
+                    $mail->SMTPOptions = [
+                        'ssl' => [
+                            'verify_peer'       => false,
+                            'verify_peer_name'  => false,
+                            'allow_self_signed' => true,
+                        ],
+                    ];
+                }
+                $mail->Host = $email_details->sending_host;                 // Specify main and backup SMTP servers
+                $mail->SMTPAuth = true;                                     // Enable SMTP authentication
+                $mail->Username = $email_details->email_address;                 // SMTP username
+                $mail->Password = \Crypt::decrypt($email_details->password);                           // SMTP password
+                $mail->SMTPSecure = $email_details->sending_encryption;                            // Enable TLS encryption, `ssl` also accepted
+                $mail->Port = $email_details->sending_port;                                    // TCP port to connect to
+                $mail->setFrom($email_details->email_address, $email_details->email_name);
+                $mail->addAddress($request->to, '');     // Add a recipient
+                $mail->isHTML(true);                                  // Set email format to HTML
+                $mail->Subject = $request->subject;
+                $mail->Body = utf8_decode($request->message);
+                if (!$mail->send()) {
+                    $return = Lang::get('lang.mailer_error').': '.$mail->ErrorInfo;
+                } else {
+                    $return = Lang::get('lang.message_has_been_sent');
+                }
+            }
 
-        if ($mail == null) {
-            return redirect('getdiagno')->with('fails', 'Please check your E-mail settings. Unable to send mails');
-        } else {
-            return redirect('getdiagno')->with('success', 'Please check your mail. An E-mail has been sent to your E-mail address');
+            return redirect()->back()->with('success', $return);
+        } catch (Exception $e) {
+            return redirect()->back()->with('fails', $e->getMessage());
         }
     }
 }

@@ -17,6 +17,11 @@ use Redirect;
  */
 class WelcomepageController extends Controller
 {
+    public function __construct()
+    {
+        //        $this->middleware('board');
+    }
+
     /**
      * Display a listing of the resource.
      *

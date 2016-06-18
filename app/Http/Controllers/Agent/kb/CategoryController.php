@@ -14,13 +14,14 @@ use App\Model\kb\Relationship;
 // Classes
 use Datatable;
 use Exception;
+use Lang;
 use Redirect;
 
 /**
  * CategoryController
  * This controller is used to CRUD category.
  *
- * @author     	Ladybird <info@ladybirdweb.com>
+ * @author      Ladybird <info@ladybirdweb.com>
  */
 class CategoryController extends Controller
 {
@@ -56,7 +57,7 @@ class CategoryController extends Controller
         try {
             return view('themes.default1.agent.kb.category.index');
         } catch (Exception $e) {
-            return redirect()->back()->with('fails', $e->errorInfo[2]);
+            return redirect()->back()->with('fails', $e->getMessage());
         }
     }
 
@@ -75,7 +76,15 @@ class CategoryController extends Controller
                         ->orderColumns('name', 'description')
                         /* add column name */
                         ->addColumn('name', function ($model) {
-                            return $model->name;
+                            $string = strip_tags($model->name);
+                            if (strlen($string) > 40) {
+                                // truncate string
+                                $stringCut = substr($string, 0, 40);
+                            } else {
+                                $stringCut = $model->name;
+                            }
+
+                            return $stringCut.'...';
                         })
                         /* add column Created */
                         ->addColumn('Created', function ($model) {
@@ -92,14 +101,14 @@ class CategoryController extends Controller
             			<div class="modal-content">
                 			<div class="modal-header">
                     			<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    			<h4 class="modal-title">Are You Sure ?</h4>
+                    			<h4 class="modal-title">'.Lang::get('lang.are_you_sure_you_want_to_delete').'</h4>
                 			</div>
                 			<div class="modal-body">
                 				'.$model->name.'
                 			</div>
                 			<div class="modal-footer">
-                    			<button type="button" class="btn btn-default pull-left" data-dismiss="modal" id="dismis2">Close</button>
-                    			<a href="category/delete/'.$model->id.'"><button class="btn btn-danger">delete</button></a>
+                    			<button type="button" class="btn btn-default pull-left" data-dismiss="modal" id="dismis2">'.Lang::get('lang.close').'</button>
+                    			<a href="category/delete/'.$model->id.'"><button class="btn btn-danger">'.Lang::get('lang.delete').'</button></a>
                 			</div>
             			</div>
         			</div>
@@ -124,7 +133,7 @@ class CategoryController extends Controller
         try {
             return view('themes.default1.agent.kb.category.create', compact('category'));
         } catch (Exception $e) {
-            return redirect()->back()->with('fails', $e->errorInfo[2]);
+            return redirect()->back()->with('fails', $e->getMessage());
         }
     }
 
@@ -146,9 +155,9 @@ class CategoryController extends Controller
         try {
             $category->fill($request->except('slug'))->save();
 
-            return Redirect::back()->with('success', 'Category Inserted Successfully');
+            return Redirect::back()->with('success', Lang::get('lang.category_inserted_successfully'));
         } catch (Exception $e) {
-            return Redirect::back()->with('fails', 'Category Not Inserted'.'<li>'.$e->errorInfo[2].'</li>');
+            return Redirect::back()->with('fails', Lang::get('lang.category_not_inserted').'<li>'.$e->getMessage().'</li>');
         }
     }
 
@@ -160,13 +169,13 @@ class CategoryController extends Controller
      *
      * @return type view
      */
-    public function edit($slug, Category $category)
+    public function edit($slug)
     {
         // fetch the category
-        $cid = $category->where('id', $slug)->first();
+        $cid = Category::where('id', $slug)->first();
         $id = $cid->id;
         /* get the atributes of the category model whose id == $id */
-        $category = $category->whereId($id)->first();
+        $category = Category::whereId($id)->first();
         /* get the Edit page the selected category via id */
         return view('themes.default1.agent.kb.category.edit', compact('category'));
     }
@@ -180,11 +189,11 @@ class CategoryController extends Controller
      *
      * @return type redirect
      */
-    public function update($slug, Category $category, CategoryUpdate $request)
+    public function update($slug, CategoryUpdate $request)
     {
 
         /* Edit the selected category via id */
-        $category = $category->where('id', $slug)->first();
+        $category = Category::where('id', $slug)->first();
         $sl = $request->input('slug');
         $slug = str_slug($sl, '-');
         // dd($slug);
@@ -196,10 +205,10 @@ class CategoryController extends Controller
             $category->slug = $slug;
             $category->save();
 
-            return redirect('category')->with('success', 'Category Updated Successfully');
+            return redirect('category')->with('success', Lang::get('lang.category_updated_successfully'));
         } catch (Exception $e) {
             //redirect to index with fails message
-            return redirect('category')->with('fails', 'Category Not Updated'.'<li>'.$e->errorInfo[2].'</li>');
+            return redirect('category')->with('fails', Lang::get('lang.category_not_updated').'<li>'.$e->getMessage().'</li>');
         }
     }
 
@@ -216,7 +225,7 @@ class CategoryController extends Controller
     {
         $relation = $relation->where('category_id', $id)->first();
         if ($relation != null) {
-            return Redirect::back()->with('fails', 'Category Not Deleted');
+            return Redirect::back()->with('fails', Lang::get('lang.category_not_deleted'));
         } else {
             /*  delete the category selected, id == $id */
             $category = $category->whereId($id)->first();
@@ -224,9 +233,9 @@ class CategoryController extends Controller
             try {
                 $category->delete();
 
-                return Redirect::back()->with('success', 'Category Deleted Successfully');
+                return Redirect::back()->with('success', Lang::get('lang.category_deleted_successfully'));
             } catch (Exception $e) {
-                return Redirect::back()->with('fails', 'Category Not Deleted'.'<li>'.$e->errorInfo[2].'</li>');
+                return Redirect::back()->with('fails', Lang::get('lang.category_not_deleted').'<li>'.$e->getMessage().'</li>');
             }
         }
     }

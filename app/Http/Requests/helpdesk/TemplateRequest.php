@@ -29,10 +29,10 @@ class TemplateRequest extends Request
     public function rules()
     {
         return [
-            'name'                  => 'required|unique:template',
-            'ban_status'            => 'required',
-            'template_set_to_clone' => 'required',
-            'language'              => 'required',
+//            'name'                  => 'required|unique:template',
+//            'subject'               => 'required',
+            'type'                  => 'required',
+            'message'               => 'required',
         ];
     }
 }

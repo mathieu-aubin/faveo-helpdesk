@@ -12,6 +12,10 @@ active
 class="active"
 @stop
 
+@section('PageHeader')
+<h1>{{Lang::get('lang.tickets')}}</h1>
+@stop
+
 @section('content')
 
 <?php
@@ -27,13 +31,14 @@ if (Auth::user()->role == 'agent') {
 <!-- Main content -->
 <div class="box box-primary">
      <div class="box-header with-border">
-        <h3 class="box-title">{!! Lang::get('lang.open') !!} </h3> <small id="title_refresh">{!! $tickets->total() !!} {!! Lang::get('lang.tickets') !!}</small>
+        <h3 class="box-title">{!! Lang::get('lang.inprogress') !!} </h3> <small id="title_refresh">{!! $tickets->total() !!} {!! Lang::get('lang.tickets') !!}</small>
         <div class="box-tools pull-right">
         <div class="has-feedback">
 
             </div>
         </div>
     </div><!-- /.box-header -->
+    <div class="box-body">
         @if(Session::has('success'))
         <div class="alert alert-success alert-dismissable">
             <i class="fa  fa-check-circle"> </i> 
@@ -51,7 +56,6 @@ if (Auth::user()->role == 'agent') {
             {{Session::get('fails')}}
         </div>
         @endif
-    <div class="box-body">
     {!! Form::open(['id'=>'modalpopup', 'route'=>'select_all','method'=>'post']) !!}
         <div class="mailbox-controls">
             <!-- Check all button -->
@@ -450,26 +454,23 @@ if (Auth::user()->role == 'agent') {
 
   
 
-    function someFunction(id){
-    if(document.getElementById(id).checked) {
-        t_id.push(id);
-        // alert(t_id);
-    } else {
-        var index = t_id.indexOf(id);
-         t_id.splice(index, 1);
-         // alert(t_id);
+    function someFunction(id) {
+        if (document.getElementById(id).checked) {
+            t_id.push(id);
+            // alert(t_id);
+        } else if(document.getElementById(id).checked === undefined){
+            var index = t_id.indexOf(id);
+            if (index === -1){
+                t_id.push(id);
+            } else{
+                t_id.splice(index, 1);
+            }
+        } else {
+            var index = t_id.indexOf(id);
+            t_id.splice(index, 1);
+            // alert(t_id);
+        }
     }
-
-    // thisid.push(id);
-    // alert(thisid);
-  //  document.getElementById("demo").innerHTML = thisid;
-
-
-    // push.thisid;
-    // alert(thisid);
-
-    // document.getElementByID('demo').innerHTML = thisid;
-}
 
 </script>
 @stop

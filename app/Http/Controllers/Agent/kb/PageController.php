@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Agent\kb;
 
-// controllersuse App\Http\Controllers\Agent\helpdesk\TicketController;
+use App\Http\Controllers\Agent\helpdesk\TicketController;
 use App\Http\Controllers\Controller;
 // request
 use App\Http\Requests\kb\PageRequest;
@@ -13,12 +13,13 @@ use Datatable;
 // classes
 use Exception;
 use Illuminate\Http\Request;
+use Lang;
 
 /**
  * PageController
  * This controller is used to CRUD Pages.
  *
- * @author     	Ladybird <info@ladybirdweb.com>
+ * @author      Ladybird <info@ladybirdweb.com>
  */
 class PageController extends Controller
 {
@@ -53,7 +54,7 @@ class PageController extends Controller
         try {
             return view('themes.default1.agent.kb.pages.index', compact('pages'));
         } catch (Exception $e) {
-            return redirect()->back()->with('fails', $e->errorInfo[2]);
+            return redirect()->back()->with('fails', $e->getMessage());
         }
     }
 
@@ -130,9 +131,9 @@ class PageController extends Controller
         try {
             $this->page->fill($request->except('slug'))->save();
 
-            return redirect('page')->with('success', 'Page created successfully');
+            return redirect('page')->with('success', Lang::get('lang.page_created_successfully'));
         } catch (Exception $e) {
-            return redirect('page')->with('fails', $e->errorInfo[2]);
+            return redirect('page')->with('fails', $e->getMessage());
         }
     }
 
@@ -150,7 +151,7 @@ class PageController extends Controller
 
             return view('themes.default1.agent.kb.pages.edit', compact('page'));
         } catch (Exception $e) {
-            return redirect('page')->with('fails', $e->errorInfo[2]);
+            return redirect('page')->with('fails', $e->getMessage());
         }
     }
 
@@ -174,9 +175,9 @@ class PageController extends Controller
             $pages->slug = $slug;
             $pages->save();
 
-            return redirect('page')->with('success', 'Your Page Updated Successfully');
+            return redirect('page')->with('success', Lang::get('lang.your_page_updated_successfully'));
         } catch (Exception $e) {
-            return redirect('page')->with('fails', $e->errorInfo[2]);
+            return redirect('page')->with('fails', $e->getMessage());
         }
     }
 
@@ -194,9 +195,9 @@ class PageController extends Controller
             $page = $this->page->whereId($id)->first();
             $page->delete();
 
-            return redirect('page')->with('success', 'Page Deleted Successfully');
+            return redirect('page')->with('success', Lang::get('lang.page_deleted_successfully'));
         } catch (Exception $e) {
-            return redirect('page')->with('fails', $e->errorInfo[2]);
+            return redirect('page')->with('fails', $e->getMessage());
         }
     }
 }

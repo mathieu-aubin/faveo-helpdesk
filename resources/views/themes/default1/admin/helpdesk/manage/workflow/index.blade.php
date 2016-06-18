@@ -16,11 +16,11 @@ class="active"
 @stop
 <!-- header -->
 @section('PageHeader')
+<h1>{{Lang::get('lang.manage')}}</h1>
 @stop
 <!-- /header -->
 <!-- breadcrumbs -->
 @section('breadcrumbs')
-
 @stop
 <!-- /breadcrumbs -->
 <!-- content -->
@@ -38,7 +38,6 @@ class="active"
                 @if(Session::has('success'))
                 <div class="alert alert-success alert-dismissable">
                     <i class="fa  fa-check-circle"></i>
-                    <b>Success</b>
                     <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
                     {!! Session::get('success') !!}
                 </div>
@@ -47,7 +46,7 @@ class="active"
                 @if(Session::has('fails'))
                 <div class="alert alert-danger alert-dismissable">
                     <i class="fa fa-ban"></i>
-                    <b>Fail!</b>
+                    <b>{!! Lang::get('lang.alert') !!} !</b>
                     <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
                     {!! Session::get('fails') !!}
                 </div>
@@ -64,16 +63,12 @@ class="active"
                 ->setUrl(route('workflow.list'))   // this is the route where data will be retrieved
                 ->render() !!}
             </div>
-            <!-- /.box-body -->
-            <!-- <div class="box box-footer"> -->
-
             <!-- </div> -->
         </div>
         <!-- /.box -->
     </div>
     <!-- /.col -->
 </div>
-
 <script>
     $(function() {
         $("#example1").DataTable();
