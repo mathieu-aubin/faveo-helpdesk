@@ -12,7 +12,6 @@ use App\Model\helpdesk\Utility\Timezones;
 use App\User;
 use Artisan;
 // classes
-use Config;
 use File;
 use Hash;
 use Illuminate\Http\Request;
@@ -63,21 +62,12 @@ class InstallerApiController extends Controller
 
             return ['response' => 'fail', 'reason' => $return_data, 'status' => '0'];
         }
-        $path1 = base_path().DIRECTORY_SEPARATOR.'.env';
-        $path2 = base_path().DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'database.php';
-        $path3 = base_path().DIRECTORY_SEPARATOR.'app'.DIRECTORY_SEPARATOR.'Http'.DIRECTORY_SEPARATOR.'routes.php';
-        $path4 = base_path().DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'lfm.php';
-        $f1 = substr(sprintf('%o', fileperms($path1)), -3);
-        $f2 = substr(sprintf('%o', fileperms($path2)), -3);
-        $f3 = substr(sprintf('%o', fileperms($path3)), -3);
-        $f4 = substr(sprintf('%o', fileperms($path4)), -3);
-        if ($f1 != '777' || $f2 != '777' || $f3 != '777' || $f4 != '777') {
-            return ['response' => 'fail', 'reason' => 'File permission issue.', 'status' => '0'];
-        }
-        // dd($validator->messages());
-        // error_reporting(E_ALL & ~E_NOTICE);
+
         // Check for pre install
-        if (\Config::get('database.install') == '%0%') {
+        $directory = base_path();
+        if (file_exists($directory.DIRECTORY_SEPARATOR.'.env') && \Config::get('database.install') != '%0%') {
+            return ['response' => 'fail', 'reason' => 'this system is already installed', 'status' => '0'];
+        } else {
             $default = $request->database;
             $host = $request->host;
             $database = $request->databasename;
@@ -86,15 +76,18 @@ class InstallerApiController extends Controller
             $port = $request->port;
             if (isset($default) && isset($host) && isset($database) && isset($dbusername)) {
                 // Setting environment values
-                $ENV['APP_ENV'] = 'local';
+                $ENV['APP_ENV'] = 'production';
                 $ENV['APP_DEBUG'] = 'false';
                 $ENV['APP_KEY'] = 'SomeRandomString';
+                $ENV['APP_URL'] = 'http://localhost';
+                $ENV['APP_BUGSNAG'] = 'true';
                 $ENV['DB_TYPE'] = $default;
                 $ENV['DB_HOST'] = $host;
                 $ENV['DB_PORT'] = $port;
                 $ENV['DB_DATABASE'] = $database;
                 $ENV['DB_USERNAME'] = $dbusername;
                 $ENV['DB_PASSWORD'] = $dbpassword;
+                $ENV['DB_INSTALL'] = '%0%';
                 $ENV['MAIL_DRIVER'] = 'smtp';
                 $ENV['MAIL_HOST'] = 'mailtrap.io';
                 $ENV['MAIL_PORT'] = '2525';
@@ -105,11 +98,12 @@ class InstallerApiController extends Controller
                 $ENV['QUEUE_DRIVER'] = 'sync';
 
                 $config = '';
+                
                 foreach ($ENV as $key => $val) {
                     $config .= "{$key}={$val}\n";
                 }
                 // Write environment file
-                $fp = fopen(base_path().'/.env', 'w');
+                $fp = fopen(base_path().DIRECTORY_SEPARATOR.'.env', 'w');
                 fwrite($fp, $config);
                 fclose($fp);
 
@@ -117,8 +111,6 @@ class InstallerApiController extends Controller
             } else {
                 return ['response' => 'fail', 'reason' => 'insufficient parameters', 'status' => '0'];
             }
-        } else {
-            return ['response' => 'fail', 'reason' => 'this system is already installed', 'status' => '0'];
         }
     }
 
@@ -194,6 +186,10 @@ class InstallerApiController extends Controller
             $system->department = 1;
             $system->date_time_format = $date_time_format->id;
             $system->time_zone = $timezones->id;
+            $version = \Config::get('app.version');
+            $version = explode(' ', $version);
+            $version = $version[1];
+            $system->version = $version;
             $system->save();
 
             // Creating user
@@ -211,29 +207,19 @@ class InstallerApiController extends Controller
 
             // Setting database installed status
             $value = '1';
-            $install = app_path('../config/database.php');
+            $install = base_path().DIRECTORY_SEPARATOR.'.env';
             $datacontent = File::get($install);
             $datacontent = str_replace('%0%', $value, $datacontent);
             File::put($install, $datacontent);
 
             // Applying email configuration on route
-            $smtpfilepath = "\App\Http\Controllers\Common\SettingsController::smtp()";
-            $lfmpath = "url('photos').'/'";
-            $path22 = app_path('Http/routes.php');
-            $path23 = base_path('config/lfm.php');
-            $content23 = File::get($path22);
-            $content24 = File::get($path23);
-            $content23 = str_replace('"%smtplink%"', $smtpfilepath, $content23);
-            $content24 = str_replace("'%url%'", $lfmpath, $content24);
             $link = 'http://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
-            $pos = strpos($link, 'api/v1/system-config');
+            $pos = strpos($link, 'final');
             $link = substr($link, 0, $pos);
-            $app_url = app_path('../config/app.php');
+            $app_url = base_path().DIRECTORY_SEPARATOR.'.env';
             $datacontent2 = File::get($app_url);
             $datacontent2 = str_replace('http://localhost', $link, $datacontent2);
             File::put($app_url, $datacontent2);
-            File::put($path22, $content23);
-            File::put($path23, $content24);
             Artisan::call('key:generate');
             // If user created return success
             if ($user) {

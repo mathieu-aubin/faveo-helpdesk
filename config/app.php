@@ -12,7 +12,7 @@ return [
       | application. If disabled, a simple generic error page is shown.
       |
      */
-    'debug' => false,
+    'debug' => env('APP_DEBUG', false),
     /*
       |--------------------------------------------------------------------------
       | Error Log
@@ -33,7 +33,16 @@ return [
       | This tells about aplication current version.
       |
      */
-    'version' => 'Community 1.0.7.5',
+    'version' => 'Community 1.0.7.8',
+    /*
+      |--------------------------------------------------------------------------
+      | Application Name
+      |--------------------------------------------------------------------------
+      |
+      | This Applocation name is used for installation and update checking
+      |
+     */
+    'name' => 'Faveo helpdesk community',
     /*
       |--------------------------------------------------------------------------
       | Application URL
@@ -44,7 +53,7 @@ return [
       | your application so that it is used when running Artisan tasks.
       |
      */
-    'url' => 'http://localhost/sujit/faveo-helpdesk/public//sujit/faveo-helpdesk/public//sujit/faveo-helpdesk/public/',
+    'url' => env('APP_URL'),
     /*
       |--------------------------------------------------------------------------
       | Application Timezone
@@ -88,7 +97,7 @@ return [
       | will not be safe. Please do this before deploying an application!
       |
      */
-    'key'    => env('APP_KEY'),
+    'key'    => env('APP_KEY', 'F70u5RfMoiq7ptPR'),
     'cipher' => MCRYPT_RIJNDAEL_128,
     /*
       |--------------------------------------------------------------------------
@@ -111,7 +120,7 @@ return [
       |to FAVEO team when any exception/error occurs or not. True value of this variable will
       |allow application to send error reports to FAVEO team's bugsnag log.
      */
-    'bugsnag_reporting' => true,
+    'bugsnag_reporting' => env('APP_BUGSNAG', true),
     /*
       |--------------------------------------------------------------------------
       | Autoloaded Service Providers
