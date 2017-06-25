@@ -164,7 +164,7 @@ class="active"
 
                 {!! Form::label('mobile',Lang::get('lang.mobile_number')) !!}
 
-                {!! Form::text('mobile',null,['class' => 'form-control']) !!}
+                {!! Form::input('number', 'mobile',null,['class' => 'form-control']) !!}
 
             </div>
 

@@ -11,7 +11,6 @@ use App\Model\helpdesk\Email\Smtp;
 // models
 use App\Model\helpdesk\Settings\Plugin;
 use App\Model\helpdesk\Theme\Widgets;
-use App\Model\helpdesk\Utility\Version_Check;
 use Config;
 // classes
 use Crypt;
@@ -36,16 +35,8 @@ class SettingsController extends Controller
      */
     public function __construct()
     {
-        // $this->smtp();
         $this->middleware('auth');
         $this->middleware('roles');
-//        self::driver();
-//        self::host();
-//        self::port();
-//        self::from();
-//        self::encryption();
-//        self::username();
-//        self::password();
     }
 
     /**
@@ -83,6 +74,7 @@ class SettingsController extends Controller
                     <div class="modal-dialog">
                         <div class="modal-content">
                             <form action="'.url('edit-widget/'.$model->id).'" method="POST">
+                            '.csrf_field().'
                                 <div class="modal-header">
                                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                                     <h4 class="modal-title">'.strtoupper($model->name).' </h4>
@@ -169,6 +161,7 @@ class SettingsController extends Controller
                     <div class="modal-dialog">
                         <div class="modal-content">
                             <form action="'.url('edit-widget/'.$model->id).'" method="POST">
+                            '.csrf_field().'
                                 <div class="modal-header">
                                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                                     <h4 class="modal-title">'.strtoupper($model->name).' </h4>
@@ -215,93 +208,6 @@ class SettingsController extends Controller
     }
 
     /**
-     * Driver.
-     *
-     * @return type void
-     */
-    public static function driver()
-    {
-        $set = new Smtp();
-        $settings = Smtp::where('id', '=', '1')->first();
-        Config::set('mail.host', $settings->driver);
-    }
-
-    /**
-     * SMTP host.
-     *
-     * @return type void
-     */
-    public static function host()
-    {
-        $set = new Smtp();
-        $settings = Smtp::where('id', '=', '1')->first();
-        Config::set('mail.host', $settings->host);
-    }
-
-    /**
-     * SMTP port.
-     *
-     * @return type void
-     */
-    public static function port()
-    {
-        $set = new Smtp();
-        $settings = Smtp::where('id', '=', '1')->first();
-        Config::set('mail.port', intval($settings->port));
-    }
-
-    /**
-     * SMTP from.
-     *
-     * @return type void
-     */
-    public static function from()
-    {
-        $set = new Smtp();
-        $settings = Smtp::where('id', '=', '1')->first();
-        Config::set('mail.from', ['address' => $settings->email, 'name' => $settings->company_name]);
-    }
-
-    /**
-     * SMTP encryption.
-     *
-     * @return type void
-     */
-    public static function encryption()
-    {
-        $set = new Smtp();
-        $settings = Smtp::where('id', '=', '1')->first();
-        Config::set('mail.encryption', $settings->encryption);
-    }
-
-    /**
-     * SMTP username.
-     *
-     * @return type void
-     */
-    public static function username()
-    {
-        $set = new Smtp();
-        $settings = Smtp::where('id', '=', '1')->first();
-        Config::set('mail.username', $settings->email);
-    }
-
-    /**
-     * SMTP password.
-     *
-     * @return type void
-     */
-    public static function password()
-    {
-        $settings = Smtp::first();
-        if ($settings->password) {
-            $pass = $settings->password;
-            $password = Crypt::decrypt($pass);
-            Config::set('mail.password', $password);
-        }
-    }
-
-    /**
      * get SMTP.
      *
      * @return type view
@@ -335,40 +241,6 @@ class SettingsController extends Controller
         } catch (Exception $e) {
             return \Redirect::route('getsmtp')->with('fails', $e->errorInfo[2]);
         }
-    }
-
-    /**
-     * SMTP.
-     *
-     * @return type void
-     */
-    public static function smtp()
-    {
-        $settings = Smtp::where('id', '=', '1')->first();
-        if ($settings->password) {
-            $password = Crypt::decrypt($settings->password);
-            Config::set('mail.driver', $settings->driver);
-            Config::set('mail.password', $password);
-            Config::set('mail.username', $settings->email);
-            Config::set('mail.encryption', $settings->encryption);
-            Config::set('mail.from', ['address' => $settings->email, 'name' => $settings->name]);
-            Config::set('mail.port', intval($settings->port));
-            Config::set('mail.host', $settings->host);
-        }
-    }
-
-    /**
-     * Settings.
-     *
-     * @param type Smtp $set
-     *
-     * @return type view\
-     */
-    public function settings(Smtp $set)
-    {
-        $settings = $set->where('id', '1')->first();
-
-        return view('themes.default1.admin.settings', compact('settings'));
     }
 
     /**
@@ -407,53 +279,6 @@ class SettingsController extends Controller
         }
     }
 
-    /**
-     * version_check.
-     *
-     * @return type
-     */
-    public function version_check()
-    {
-        $response_url = \URL::route('post-version-check');
-        echo "<form action='http://www.faveohelpdesk.com/billing/public/version' method='post' name='redirect'>";
-        echo "<input type='hidden' name='_token' value='csrf_token()'/>";
-        echo "<input type='hidden' name='title' value='Faveo helpdesk community'/>";
-        echo "<input type='hidden' name='response_url' value='".$response_url."' />";
-        echo '</form>';
-        echo "<script language='javascript'>document.redirect.submit();</script>";
-    }
-
-    /**
-     * post_version_check.
-     *
-     * @return type
-     */
-    public function post_version_check(Request $request)
-    {
-        //        dd($request);
-        $current_version = \Config::get('app.version');
-        $current_version = explode(' ', $current_version);
-        $current_version = $current_version[1];
-        $new_version = $request->value;
-        if ($current_version == $new_version) {
-            return redirect()->route('checkupdate')->with('info', ' No, new Updates');
-        } elseif ($current_version < $new_version) {
-            $version = Version_Check::where('id', '=', '1')->first();
-            $version->current_version = $current_version;
-            $version->new_version = $new_version;
-            $version->save();
-
-            return redirect()->route('checkupdate')->with('info', ' Version '.$new_version.' is Available');
-        } else {
-            return redirect()->route('checkupdate')->with('info', ' Error Checking Version');
-        }
-    }
-
-    public function getupdate()
-    {
-        return \View::make('themes.default1.admin.helpdesk.settings.checkupdate');
-    }
-
     public function Plugins()
     {
         return view('themes.default1.admin.helpdesk.settings.plugins');
@@ -475,7 +300,7 @@ class SettingsController extends Controller
                                     $activate = '<a href='.url('plugin/status/'.$model['path']).'>Deactivate</a>';
                                 }
 
-                                $delete = '<a href=  id=delete'.$model['path'].' data-toggle=modal data-target=#del'.$model['path']."><span style='color:red'>Delete</span></a>"
+                                $delete = '<a href="#"  id=delete'.$model['path'].' data-toggle=modal data-target=#del'.$model['path']."><span style='color:red'>Delete</span></a>"
                                         ."<div class='modal fade' id=del".$model['path'].">
                                             <div class='modal-dialog'>
                                                 <div class=modal-content>  
@@ -538,74 +363,84 @@ class SettingsController extends Controller
      */
     public function PostPlugins(Request $request)
     {
-        $v = $this->validate($request, ['plugin' => 'required|mimes:application/zip,zip,Zip']);
-        $plug = new Plugin();
-        $file = $request->file('plugin');
-        //dd($file);
-        $destination = app_path().DIRECTORY_SEPARATOR.'Plugins';
-        $zipfile = $file->getRealPath();
-        /*
-         * get the file name and remove .zip
-         */
-        $filename2 = $file->getClientOriginalName();
-        $filename2 = str_replace('.zip', '', $filename2);
-        $filename1 = ucfirst($file->getClientOriginalName());
-        $filename = str_replace('.zip', '', $filename1);
-        mkdir($destination.DIRECTORY_SEPARATOR.$filename);
-        /*
-         * extract the zip file using zipper
-         */
-        \Zipper::make($zipfile)->folder($filename2)->extractTo($destination.DIRECTORY_SEPARATOR.$filename);
+        $this->validate($request, ['plugin' => 'required|mimes:application/zip,zip,Zip']);
+        try {
+            if (!extension_loaded('zip')) {
+                throw new Exception('Please enable zip extension in your php');
+            }
+            $plug = new Plugin();
+            $file = $request->file('plugin');
+            $destination = app_path().DIRECTORY_SEPARATOR.'Plugins';
+            $zipfile = $file->getRealPath();
+            /*
+             * get the file name and remove .zip
+             */
+            $filename2 = $file->getClientOriginalName();
+            $filename2 = str_replace('.zip', '', $filename2);
+            $filename1 = ucfirst($file->getClientOriginalName());
+            $filename = str_replace('.zip', '', $filename1);
+            $dir_check = scandir($destination);
+            if (in_array($filename, $dir_check)) {
+                return redirect()->back()->with('fails', Lang::get('lang.plugin-exists'));
+            }
+            mkdir($destination.DIRECTORY_SEPARATOR.$filename);
+            /*
+             * extract the zip file using zipper
+             */
+            \Zipper::make($zipfile)->folder($filename2)->extractTo($destination.DIRECTORY_SEPARATOR.$filename);
 
-        $file = app_path().DIRECTORY_SEPARATOR.'Plugins'.DIRECTORY_SEPARATOR.$filename; // Plugin file path
+            $file = app_path().DIRECTORY_SEPARATOR.'Plugins'.DIRECTORY_SEPARATOR.$filename; // Plugin file path
 
-        if (file_exists($file)) {
-            $seviceporvider = $file.DIRECTORY_SEPARATOR.'ServiceProvider.php';
-            $config = $file.DIRECTORY_SEPARATOR.'config.php';
-            if (file_exists($seviceporvider) && file_exists($config)) {
-                /*
-                 * move to faveo config
-                 */
-                $faveoconfig = config_path().DIRECTORY_SEPARATOR.'plugins'.DIRECTORY_SEPARATOR.$filename.'.php';
-                if ($faveoconfig) {
-
-                    //copy($config, $faveoconfig);
+            if (file_exists($file)) {
+                $seviceporvider = $file.DIRECTORY_SEPARATOR.'ServiceProvider.php';
+                $config = $file.DIRECTORY_SEPARATOR.'config.php';
+                if (file_exists($seviceporvider) && file_exists($config)) {
                     /*
-                     * write provider list in app.php line 128
+                     * move to faveo config
                      */
-                    $app = base_path().DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'app.php';
-                    chmod($app, 0644);
-                    $str = "\n\n\t\t\t'App\\Plugins\\$filename"."\\ServiceProvider',";
-                    $line_i_am_looking_for = 144;
-                    $lines = file($app, FILE_IGNORE_NEW_LINES);
-                    $lines[$line_i_am_looking_for] = $str;
-                    file_put_contents($app, implode("\n", $lines));
-                    $plug->create(['name' => $filename, 'path' => $filename, 'status' => 1]);
+                    $faveoconfig = config_path().DIRECTORY_SEPARATOR.'plugins'.DIRECTORY_SEPARATOR.$filename.'.php';
+                    if ($faveoconfig) {
 
-                    return redirect()->back()->with('success', 'Installed SuccessFully');
+                        //copy($config, $faveoconfig);
+                        /*
+                         * write provider list in app.php line 128
+                         */
+                        $app = base_path().DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'app.php';
+                        chmod($app, 0644);
+                        $str = "\n\n\t\t\t'App\\Plugins\\$filename"."\\ServiceProvider',";
+                        $line_i_am_looking_for = 185;
+                        $lines = file($app, FILE_IGNORE_NEW_LINES);
+                        $lines[$line_i_am_looking_for] = $str;
+                        file_put_contents($app, implode("\n", $lines));
+                        $plug->create(['name' => $filename, 'path' => $filename, 'status' => 1]);
+
+                        return redirect()->back()->with('success', Lang::get('lang.plugin-installed'));
+                    } else {
+                        /*
+                         * delete if the plugin hasn't config.php and ServiceProvider.php
+                         */
+                        $this->deleteDirectory($file);
+
+                        return redirect()->back()->with('fails', Lang::get('no-plugin-file').$file);
+                    }
                 } else {
                     /*
                      * delete if the plugin hasn't config.php and ServiceProvider.php
                      */
                     $this->deleteDirectory($file);
 
-                    return redirect()->back()->with('fails', 'Their is no '.$file);
+                    return redirect()->back()->with('fails', Lang::get('plugin-config-missing').$file);
                 }
             } else {
                 /*
-                 * delete if the plugin hasn't config.php and ServiceProvider.php
+                 * delete if the plugin Name is not equal to the folder name
                  */
                 $this->deleteDirectory($file);
 
-                return redirect()->back()->with('fails', 'Their is no <b>config.php or ServiceProvider.php</b>  '.$file);
+                return redirect()->back()->with('fails', '<b>'.Lang::get('lang.plugin-path-missing').'</b>  '.$file);
             }
-        } else {
-            /*
-             * delete if the plugin Name is not equal to the folder name
-             */
-            $this->deleteDirectory($file);
-
-            return redirect()->back()->with('fails', '<b>Plugin File Path is not exist</b>  '.$file);
+        } catch (Exception $ex) {
+            return redirect()->back()->with('fails', $ex->getMessage());
         }
     }
 
@@ -745,7 +580,7 @@ class SettingsController extends Controller
         if (!$plug) {
             $app = base_path().DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'app.php';
             $str = "\n'App\\Plugins\\$slug"."\\ServiceProvider',";
-            $line_i_am_looking_for = 144;
+            $line_i_am_looking_for = 185;
             $lines = file($app, FILE_IGNORE_NEW_LINES);
             $lines[$line_i_am_looking_for] = $str;
             file_put_contents($app, implode("\n", $lines));
@@ -759,7 +594,7 @@ class SettingsController extends Controller
 
             $app = base_path().DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'app.php';
             $str = "\n'App\\Plugins\\$slug"."\\ServiceProvider',";
-            $line_i_am_looking_for = 144;
+            $line_i_am_looking_for = 185;
             $lines = file($app, FILE_IGNORE_NEW_LINES);
             $lines[$line_i_am_looking_for] = $str;
             file_put_contents($app, implode("\n", $lines));

@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Model\helpdesk\Email\Emails;
 // models
 use App\Model\helpdesk\Settings\CommonSettings;
+use App\Model\helpdesk\Settings\Followup;
 use App\Model\helpdesk\Ticket\Ticket_Status;
 use App\Model\helpdesk\Ticket\Ticket_Thread;
 use App\Model\helpdesk\Ticket\Tickets;
@@ -17,7 +18,6 @@ use App\User;
 use Hash;
 // classes
 use Illuminate\Http\Request;
-use Input;
 use Lang;
 
 /**
@@ -75,7 +75,7 @@ class UnAuthController extends Controller
             }
             if ($ticket->user_id == $user_details->id) {
                 if ($user_details->role == 'user') {
-                    $username = $user_details->user_name;
+                    $username = $user_details->first_name;
                 } else {
                     $username = $user_details->first_name.' '.$user_details->last_name;
                 }
@@ -279,7 +279,7 @@ class UnAuthController extends Controller
         return Lang::get('lang.your_ticket_has_been').' '.$ticket_status->state;
     }
 
-       //Auto-close tickets
+    //Auto-close tickets
     public function autoCloseTickets()
     {
         $workflow = \App\Model\helpdesk\Workflow\WorkflowClose::whereId(1)->first();
@@ -316,4 +316,101 @@ class UnAuthController extends Controller
         } else {
         }
     }
+
+    /**
+     *@category function to change system's language
+     *
+     *@param string $lang //desired language's iso code
+     *
+     *@return response
+     */
+    public static function changeLanguage($lang)
+    {
+        //if(Cache::has('language'))
+        //{
+        //  return Cache::get('language');
+        //} else return 'false';
+        // Cache::put('language',$)
+        $path = base_path('resources/lang');  // Path to check available language packages
+        if (array_key_exists($lang, \Config::get('languages')) && in_array($lang, scandir($path))) {
+            // dd(array_key_exists($lang, Config::get('languages')));
+            // app()->setLocale($lang);
+
+            \Cache::forever('language', $lang);
+            // dd(Cache::get('language'));
+            // dd()
+        } else {
+            return false;
+        }
+
+        return true;
+    }
+
+    // Follow up tickets
+       public function followup()
+       {
+           $followup = Followup::whereId('1')->first();
+           $condition = $followup->condition;
+         // dd($condition);
+
+        switch ($condition) {
+            case 'everyMinute':
+              $followup_set = ' + 1 minute';
+                break;
+            case 'everyFiveMinutes':
+               $followup_set = ' + 5 minute';
+                break;
+            case 'everyTenMinutes':
+               $followup_set = ' + 10 minute';
+                break;
+            case 'everyThirtyMinutes':
+               $followup_set = ' + 30 minute';
+                break;
+            case 'hourly':
+               $followup_set = ' + 1 hours';
+                break;
+            case 'daily':
+               $followup_set = ' + 1 day';
+                break;
+            case 'weekly':
+               $followup_set = ' + 7 day';
+                break;
+            case 'monthly':
+               $followup_set = ' + 30 day';
+                break;
+            case 'yearly':
+               $followup_set = ' + 365 day';
+                break;
+        }
+
+           if ($followup->status = 1) {
+               $tickets = Tickets::where('id', '>=', 1)->where('status', '!=', 5)->get();
+        // dd( $tickets);
+         // $tickets=Tickets::where('id', '>=', 1)->where('status', '!=', 5)->pluck('id');
+        // dd( $tickets);
+         // $id=1;
+        foreach ($tickets as $ticket) {
+            // $id=1;
+            // $id++;
+        // $ticket=Tickets::where('status', '!=', 5)->get();
+
+        // dd($ticket);
+            // if($ticket != null){
+                // dd('here');
+            $ck = date('Y-m-d H:i:s', strtotime($ticket->updated_at.$followup_set));
+            // dd($ck);
+            $current_time = date('Y-m-d H:i:s');
+            if ($current_time > $ck) {
+                $ticket->follow_up = 1;
+                $ticket->save();
+             //  Tickets::where('id', '=',$id)
+             // ->update(['follow_up' => 1]);
+
+            // }
+            }
+        //       if($id=2)
+        // {dd($ticket);}
+        }
+           }
+       }
 }

@@ -16,6 +16,7 @@ use App\Model\helpdesk\Agent_panel\User_org;
 use App\User;
 // classes
 use Exception;
+use Illuminate\Http\Request;
 use Lang;
 
 /**
@@ -327,5 +328,27 @@ class OrganizationController extends Controller
         $users = User::whereId($id)->first();
 
         return '['.$last.']';
+    }
+
+    public function getOrgAjax(Request $request)
+    {
+        $org = new Organization();
+        $q = $request->input('term');
+        $orgs = $org->where('name', 'LIKE', '%'.$q.'%')
+                ->select('name as label', 'id as value')
+                ->get()
+                ->toJson();
+
+        return $orgs;
+    }
+
+    /**
+     * This function is used autofill organizations name .
+     *
+     * @return datatable
+     */
+    public function organizationAutofill()
+    {
+        return view('themes.default1.agent.helpdesk.organization.getautocomplete');
     }
 }

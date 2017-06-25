@@ -60,6 +60,9 @@ class="active"
             @if($errors->first('phone_number'))
             <li class="error-message-padding">{!! $errors->first('phone_number', ':message') !!}</li>
             @endif
+            @if($errors->first('country_code'))
+            <li class="error-message-padding">{!! $errors->first('country_code', ':message') !!}</li>
+            @endif
             @if($errors->first('mobile'))
             <li class="error-message-padding">{!! $errors->first('mobile', ':message') !!}</li>
             @endif
@@ -120,9 +123,9 @@ class="active"
                 {!! Form::text('ext',null,['class' => 'form-control']) !!}
             </div>
             <!--country code-->
-            <div class="col-xs-1 form-group {{ Session::has('country_code') ? 'has-error' : '' }}">
+            <div class="col-xs-1 form-group {{  $errors->has('country_code') ? 'has-error' : '' }}">
 
-                {!! Form::label('country_code',Lang::get('lang.country-code')) !!}
+                {!! Form::label('country_code',Lang::get('lang.country-code')) !!} @if($send_otp->status ==1)<span class="text-red"> *</span>@endif
                 {!! Form::text('country_code',null,['class' => 'form-control', 'placeholder' => $phonecode, 'title' => Lang::get('lang.enter-country-phone-code')]) !!}
 
             </div>
@@ -133,8 +136,8 @@ class="active"
             </div>
             <!-- Mobile -->
             <div class="col-xs-3 form-group {{ $errors->has('mobile') ? 'has-error' : '' }}">
-                {!! Form::label('mobile',Lang::get('lang.mobile_number')) !!}
-                {!! Form::text('mobile',null,['class' => 'form-control']) !!}
+                {!! Form::label('mobile',Lang::get('lang.mobile_number')) !!}@if($send_otp->status ==1)<span class="text-red"> *</span>@endif
+                {!! Form::input('number', 'mobile',null,['class' => 'form-control']) !!}
             </div>
         </div>
         <div>
@@ -182,11 +185,14 @@ class="active"
                 {!! Form::label('assign_group',Lang::get('lang.assigned_group')) !!} <span class="text-red"> *</span>
                 {!!Form::select('group',[''=>Lang::get('lang.select_a_group'),Lang::get('lang.groups')=>$groups->lists('name','id')->toArray()],null,['class' => 'form-control select']) !!}
             </div>
-            <!-- primary dept -->
+
+           <!-- primary department -->
             <div class="col-xs-4 form-group {{ $errors->has('primary_department') ? 'has-error' : '' }}">
-                {!! Form::label('primary_dpt',Lang::get('lang.primary_department')) !!} <span class="text-red"> *</span>
-                {!! Form::select('primary_department', [''=>Lang::get('lang.select_a_department'),Lang::get('lang.departments')=>$departments->lists('name','id')->toArray()],null,['class' => 'form-control select']) !!}
+                {!! Form::label('primary_dpt', Lang::get('lang.primary_department')) !!} <span class="text-red"> *</span>
+
+                {!!Form::select('primary_department', [''=>Lang::get('lang.select_a_department'), Lang::get('lang.departments')=>$departments->lists('name','id')->toArray()],'',['class' => 'form-control select']) !!}
             </div>
+
             <!-- timezone -->
             <div class="col-xs-4 form-group {{ $errors->has('agent_time_zone') ? 'has-error' : '' }}">
                 {!! Form::label('agent_tzone',Lang::get('lang.agent_time_zone')) !!} <span class="text-red"> *</span>
@@ -202,10 +208,25 @@ class="active"
             </div>
             @endwhile 
         </div>
+        <!-- Send email to user about registration password -->
+        <br/>
+        <div class="form-group">
+            <input type="checkbox" name="send_email" checked> &nbsp;<label> {{ Lang::get('lang.send_password_via_email')}}</label>
+        </div>
     </div>
     <div class="box-footer">
         {!! Form::submit(Lang::get('lang.submit'),['class'=>'form-group btn btn-primary'])!!}
     </div>
 </div>
 {!!Form::close()!!}
+
+<script type="text/javascript">
+    $(function() {
+        //Initialize Select2 Elements
+        $(".select2").select2();
+    });
+    </script>
+
+
+
 @stop

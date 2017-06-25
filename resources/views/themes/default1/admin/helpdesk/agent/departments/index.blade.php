@@ -16,7 +16,7 @@ class="active"
 @stop
 <!-- header -->
 @section('PageHeader')
-<h1>{{Lang::get('lang.staffs')}}</h1>
+<h1>{{Lang::get('lang.departments')}}</h1>
 @stop
 <!-- /header -->
 <!-- breadcrumbs -->
@@ -30,7 +30,7 @@ class="active"
 @section('content')
 <div class="box box-primary">
     <div class="box-header">
-        <h2 class="box-title">{!! Lang::get('lang.list_of_departments') !!}</h2><a href="{{route('departments.create')}}" class="btn btn-primary pull-right">{{Lang::get('lang.create_a_department')}}</a></div>
+        <h2 class="box-title">{!! Lang::get('lang.list_of_departments') !!}</h2><a href="{{route('departments.create')}}" class="btn btn-primary pull-right"><span class="glyphicon glyphicon-plus"></span> &nbsp;{{Lang::get('lang.create_a_department')}}</a></div>
     <div class="box-body table-responsive ">
         <!-- check whether success or not -->
         @if(Session::has('success'))
@@ -88,7 +88,7 @@ class="active"
                     $manager = "";
                 } else {
                     $manager = App\User::whereId($department->manager)->first();
-                    $manager = $manager->user_name;
+                    $manager = $manager->full_name;
                 }
 
                 if ($department->sla == null) {

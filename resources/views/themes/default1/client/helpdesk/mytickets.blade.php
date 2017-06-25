@@ -71,13 +71,15 @@ class="active"
     ?> >
                                 <td><input type="checkbox" class="icheckbox_flat-blue" name="select_all[]" value="{{$ticket->id}}"/></td>
                                 <?php
-                                $title = App\Model\helpdesk\Ticket\Ticket_Thread::where('ticket_id', '=', $ticket->id)->first();
+                                $title = App\Model\helpdesk\Ticket\Ticket_Thread::where('ticket_id', '=', $ticket->id)->orderBy('id')->first();
                                 $string = strip_tags($title->title);
                                 if (strlen($string) > 40) {
-                                    $stringCut = substr($string, 0, 40);
-                                    $string = substr($stringCut, 0, strrpos($stringCut, ' ')) . ' ...';
+                                    $stringCut = substr($string, 0, 25);
+                                    $string = $stringCut.'....';
                                 }
-                                $TicketData = App\Model\helpdesk\Ticket\Ticket_Thread::where('ticket_id', '=', $ticket->id)->max('id');
+                                $TicketData = App\Model\helpdesk\Ticket\Ticket_Thread::where('ticket_id', '=', $ticket->id)
+                                    ->where('user_id', '!=' , null)
+                                    ->max('id');
                                 $TicketDatarow = App\Model\helpdesk\Ticket\Ticket_Thread::where('id', '=', $TicketData)->first();
                                 $LastResponse = App\User::where('id', '=', $TicketDatarow->user_id)->first();
                                 if ($LastResponse->role == "user") {
@@ -90,7 +92,7 @@ class="active"
                                         $username = $LastResponse->user_name;
                                     }
                                 }
-                                $titles = App\Model\helpdesk\Ticket\Ticket_Thread::where('ticket_id', '=', $ticket->id)->get();
+                                $titles = App\Model\helpdesk\Ticket\Ticket_Thread::where('ticket_id', '=', $ticket->id)->where('is_internal', '=', 0)->get();
                                 $count = count($titles);
                                 foreach ($titles as $title) {
                                     $title = $title;
@@ -177,7 +179,7 @@ class="active"
                                         $username = $LastResponse->user_name;
                                     }
                                 }
-                                $titles = App\Model\helpdesk\Ticket\Ticket_Thread::where('ticket_id', '=', $ticket->id)->get();
+                                $titles = App\Model\helpdesk\Ticket\Ticket_Thread::where('ticket_id', '=', $ticket->id)->where("is_internal", "=", 0)->get();
                                 $count = count($titles);
                                 foreach ($titles as $title) {
                                     $title = $title;

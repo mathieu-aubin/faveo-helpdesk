@@ -58,7 +58,7 @@ class="active"
                             <b>{!! Lang::get('lang.internal_notes') !!}</b>  
                             <br/> <center>{!! $orgs->internal_notes !!}</center></a></li>@endif
                 </ul>
-                <button data-toggle="modal" data-target="#assign_head" id="button_select" class="btn btn-primary btn-flat btn-block">{!! Lang::get('lang.select_department_manager') !!}</button>
+                <button data-toggle="modal" data-target="#assign_head" id="button_select" class="btn btn-primary btn-flat btn-block">{!! Lang::get('lang.select_organization_manager') !!}</button>
             </div>
         </div>
         <div id="refresh1"> 
@@ -245,7 +245,7 @@ class="active"
                                             @if($attach > 0)&nbsp;<i class="fa fa-paperclip"></i>@endif</td>
                                         <td class="mailbox-Id"><a href="{!! route('ticket.thread',[$ticket->id]) !!}" title="{!! $title->title !!}">#{!! $ticket->ticket_number !!}</a></td>
                                         <?php $priority = App\Model\helpdesk\Ticket\Ticket_Priority::where('priority_id', '=', $ticket->priority_id)->first(); ?>
-                                        <td class="mailbox-priority"><spam class="btn btn-{{$priority->priority_color}} btn-xs">{{$priority->priority}}</spam></td>
+                                        <td class="mailbox-priority">@if($priority != null)<spam class="btn btn-{{$priority->priority_color}} btn-xs">{{$priority->priority}}</spam>@endif</td>
                                 <?php $from = App\User::where('id', '=', $ticket->user_id)->first(); ?> 
                                 <td class="mailbox-last-reply" style="color:{!! $rep !!}">{!! $username !!}</td>
                                 <td>{!! $assigned !!}</td>
@@ -363,7 +363,7 @@ class="active"
                                             @if($attach > 0)&nbsp;<i class="fa fa-paperclip"></i>@endif</td>
                                         <td class="mailbox-Id"><a href="{!! route('ticket.thread',[$ticket->id]) !!}" title="{!! $title->title !!}">#{!! $ticket->ticket_number !!}</a></td>
                                         <?php $priority = App\Model\helpdesk\Ticket\Ticket_Priority::where('priority_id', '=', $ticket->priority_id)->first(); ?>
-                                        <td class="mailbox-priority"><spam class="btn btn-{{$priority->priority_color}} btn-xs">{{$priority->priority}}</spam></td>
+                                        <td class="mailbox-priority">@if($priority != null)<spam class="btn btn-{{$priority->priority_color}} btn-xs">{{$priority->priority}}</spam>@endif</td>
                                 <?php $from = App\User::where('id', '=', $ticket->user_id)->first(); ?> 
                                 <td class="mailbox-last-reply" style="color:{!! $rep !!}">{!! $username !!}</td>
                                 <td>{!! $assigned !!}</td>
@@ -485,7 +485,7 @@ class="active"
                                             @if($attach > 0)&nbsp;<i class="fa fa-paperclip"></i>@endif</td>
                                         <td class="mailbox-Id"><a href="{!! route('ticket.thread',[$ticket->id]) !!}" title="{!! $title->title !!}">#{!! $ticket->ticket_number !!}</a></td>
                                         <?php $priority = App\Model\helpdesk\Ticket\Ticket_Priority::where('priority_id', '=', $ticket->priority_id)->first(); ?>
-                                        <td class="mailbox-priority"><spam class="btn btn-{{$priority->priority_color}} btn-xs">{{$priority->priority}}</spam></td>
+                                        <td class="mailbox-priority">@if($priority != null)<spam class="btn btn-{{$priority->priority_color}} btn-xs">{{$priority->priority}}</spam>@endif</td>
                                 <?php $from = App\User::where('id', '=', $ticket->user_id)->first(); ?> 
                                 <td class="mailbox-last-reply" style="color:{!! $rep !!}">{!! $username !!}</td>
                                 <td>{!! $assigned !!}</td>

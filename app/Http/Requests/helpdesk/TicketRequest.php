@@ -28,10 +28,46 @@ class TicketRequest extends Request
      */
     public function rules()
     {
-        return [
-            // 'To' => 'required',
-            'ticket_ID'     => 'required',
-            'reply_content' => 'required',
-        ];
+        $error = '';
+        try {
+            $size = $this->size();
+            if ($size > 800 || $size == 0) {
+                throw new \Exception('File size exceeded', 422);
+            }
+        } catch (\Exception $ex) {
+            dd($ex);
+            $error = $this->error($ex);
+        }
+//        return [
+//            'attachment' => 'not_in:'.$error,
+//        ];
+    }
+
+    public function size()
+    {
+        $files = $this->file('attachment');
+        if (!$files) {
+            throw new \Exception('exceeded', 422);
+        }
+        $size = 0;
+        if (count($files) > 0) {
+            foreach ($files as $file) {
+                $size += $file->getSize();
+            }
+        }
+
+        return $size;
+    }
+
+    public function error($e)
+    {
+        if ($this->ajax() || $this->wantsJson()) {
+            $message = $e->getMessage();
+            if (is_object($message)) {
+                $message = $message->toArray();
+            }
+
+            return $message;
+        }
     }
 }

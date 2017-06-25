@@ -14,7 +14,7 @@
         <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
 @stop
 @section('breadcrumb')
-	<div class="site-hero clearfix">
+    <div class="site-hero clearfix">
         <ol class="breadcrumb breadcrumb-custom">
             <li class="text">{!! Lang::get('lang.you_are_here') !!}: </li>
             <li><a href="{!! URL::route('/') !!}">{!! Lang::get('lang.home') !!}</a></li>
@@ -22,6 +22,18 @@
     </div>
 @stop
 @section('content')
+@if(!Session::has('error') && count($errors)>0)
+    <div class="alert alert-danger alert-dismissable">
+        <i class="fa fa-ban"></i>
+        <b>{!! Lang::get('lang.alert') !!} !</b>
+        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+        <ul>
+            @foreach ($errors->all() as $error)
+            <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+    @endif
 <div id="content" class="site-content col-md-12">
     <div id="corewidgetbox">
         <div class="widgetrow text-center">
@@ -33,12 +45,18 @@
                 </a>
             </span>
         @endif
-        @if(App\Model\helpdesk\Settings\System::first()->status == 1)
-            <span onclick="javascript: window.location.href='{!! URL::route('form') !!}';">
-                <a href="{!! URL::route('form') !!}" class="widgetrowitem defaultwidget" style="background-image: URL('lb-faveo/media/images/submitticket.png');">
-                    <span class="widgetitemtitle">{!! Lang::get('lang.submit_a_ticket') !!}</span>
-                </a>
-            </span>
+        <?php $system = App\Model\helpdesk\Settings\System::where('id', '=', '1')->first();            
+        ?>
+        @if($system != null) 
+            @if($system->status) 
+                @if($system->status == 1)
+                    <span onclick="javascript: window.location.href='{!! URL::route('form') !!}';">
+                        <a href="{!! URL::route('form') !!}" class="widgetrowitem defaultwidget" style="background-image: URL('lb-faveo/media/images/submitticket.png');">
+                            <span class="widgetitemtitle">{!! Lang::get('lang.submit_a_ticket') !!}</span>
+                        </a>
+                    </span>
+                @endif
+            @endif
         @endif
             <span onclick="javascript: window.location.href='{{url('mytickets')}}';">
                 <a href="{{url('mytickets')}}" class="widgetrowitem defaultwidget" style="background-image: URL('lb-faveo/media/images/news.png');">
@@ -53,7 +71,7 @@
         </div>
     </div>
 <script type="text/javascript"> $(function(){ $('.dialogerror, .dialoginfo, .dialogalert').fadeIn('slow');$("form").bind("submit", function(e){$(this).find("input:submit").attr("disabled", "disabled");});});</script>
-				<script type="text/javascript" >try {if (top.location.hostname != self.location.hostname) { throw 1; }} catch (e) { top.location.href = self.location.href; }</script>
+<script type="text/javascript" >try {if (top.location.hostname != self.location.hostname) { throw 1; }} catch (e) { top.location.href = self.location.href; }</script>
 </div>   
 
 @stop

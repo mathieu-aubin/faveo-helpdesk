@@ -3,28 +3,33 @@ sudo: false
 language: php
 
 matrix:
-  allow_failures:
-    - php: hhvm
+    fast_finish: true
+    include:
+        - php: 5.3
+          env: COMPOSER_FLAGS="--prefer-stable --prefer-lowest"
+        - php: 5.4
+        - php: 5.5
+        - php: 5.6
+        - php: 7.0
+        - php: 7.1
+        # Use the newer stack for HHVM as HHVM does not support Precise
+        - php: hhvm
+          sudo: required
+          dist: trusty
+          group: edge
 
-php:
-  - 5.3
-  - 5.4
-  - 5.5
-  - 5.6
-  - hhvm
-  - 7
-
-before_script:
- - wget http://getcomposer.org/composer.phar
- - php composer.phar install --no-interaction
+before_install:
+ - wget https://scrutinizer-ci.com/ocular.phar
  - mkdir -p build/logs
+
+install:
+ - travis_retry composer update --no-interaction $COMPOSER_FLAGS
 
 script:
   - ./vendor/bin/phpunit --coverage-text --coverage-clover build/logs/clover.xml
 
 after_script:
   - php vendor/bin/coveralls -v --exclude-no-stmt
-  - wget https://scrutinizer-ci.com/ocular.phar
   - php ocular.phar code-coverage:upload --format=php-clover build/logs/clover.xml
 
 notifications:

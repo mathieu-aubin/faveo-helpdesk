@@ -18,9 +18,9 @@
         <link rel="stylesheet" href="{{asset("lb-faveo/css/chosen.css")}}">
     </head>
     <body class="wc-setup wp-core-ui">
-        <h1 id="wc-logo"><a href="http://www.faveohelpdesk.com">
+        <center><h1 id="wc-logo"><a href="http://www.faveohelpdesk.com">
             <img src="{{asset("lb-faveo/media/installer/faveo.png")}}" alt="faveo" width="
-            250px"></a></h1>
+            250px"></a></h1></center>
    
     <div class="wc-setup-content">
         @yield('content')

@@ -14,6 +14,31 @@ class="active"
 
 @section('PageHeader')
 <h1>{{Lang::get('lang.tickets')}}</h1>
+<style>
+ .tooltip1 {
+     position: relative;
+     /*display: inline-block;*/
+     /*border-bottom: 1px dotted black;*/
+ }
+ 
+ .tooltip1 .tooltiptext {
+     visibility: hidden;
+     width: 100%;
+     background-color: black;
+     color: #fff;
+     text-align: center;
+     border-radius: 6px;
+     padding: 5px 0;
+ 
+     /* Position the tooltip */
+     position: absolute;
+     z-index: 1;
+ }
+ 
+ .tooltip1:hover .tooltiptext {
+     visibility: visible;
+ }
+ </style>
 @stop
 
 @section('content')
@@ -21,15 +46,15 @@ class="active"
 $date_time_format = UTC::getDateTimeFormat();
 if (Auth::user()->role == 'agent') {
     $dept = App\Model\helpdesk\Agent\Department::where('id', '=', Auth::user()->primary_dpt)->first();
-    $tickets = App\Model\helpdesk\Ticket\Tickets::where('status', '>', 1)->where('dept_id', '=', $dept->id)->where('status', '<', 4)->orderBy('id', 'DESC')->paginate(20);
+    $tickets = App\Model\helpdesk\Ticket\Tickets::where('status', '>', 1)->where('dept_id', '=', $dept->id)->where('status', '<', 4)->orderBy('id', 'DESC')->count();
 } else {
-    $tickets = App\Model\helpdesk\Ticket\Tickets::where('status', '>', 1)->where('status', '<', 4)->orderBy('id', 'DESC')->paginate(20);
+    $tickets = App\Model\helpdesk\Ticket\Tickets::where('status', '>', 1)->where('status', '<', 4)->orderBy('id', 'DESC')->count();
 }
 ?>
 <!-- Main content -->
 <div class="box box-primary">
     <div class="box-header with-border">
-        <h3 class="box-title"> {!! Lang::get('lang.closed') !!} </h3> <small id="title_refresh">{!! $tickets->total() !!}  {!! Lang::get('lang.tickets') !!}</small>
+        <h3 class="box-title"> {!! Lang::get('lang.closed') !!} </h3> <small id="title_refresh">{!! $tickets !!}  {!! Lang::get('lang.tickets') !!}</small>
     </div><!-- /.box-header -->
     <div class="box-body">
         @if(Session::has('success'))
@@ -47,6 +72,7 @@ if (Auth::user()->role == 'agent') {
             {{Session::get('fails')}}
         </div>
         @endif
+        
         {!! Form::open(['id'=>'modalpopup', 'route'=>'select_all','method'=>'post']) !!}
         <!--<div class="mailbox-controls">-->
         <!-- Check all button -->
@@ -54,74 +80,14 @@ if (Auth::user()->role == 'agent') {
         {{-- <a class="btn btn-default btn-sm" id="click"><i class="fa fa-refresh"></i></a> --}}
         <input type="submit" class="btn btn-default text-orange btn-sm" name="submit" id="delete" value="{!! Lang::get('lang.delete') !!}">
         <input type="submit" class="btn btn-default text-blue btn-sm" name="submit" id="close" value="{!! Lang::get('lang.open') !!}">
+        
+        
         <!--</div>-->
+        <p><p/>
         <div class="mailbox-messages"  id="refresh">
             <p style="display:none;text-align:center; position:fixed; margin-left:40%;margin-top:-70px;" id="show" class="text-red"><b>{!! Lang::get('lang.loading') !!}...</b></p>
             <!-- table -->
-            {!! Datatable::table() 
-            ->addColumn(
-            "",
-            Lang::get('lang.subject'),
-            Lang::get('lang.ticket_id'),
-            Lang::get('lang.priority'),
-            Lang::get('lang.from'),
-            Lang::get('lang.assigned_to'),
-            Lang::get('lang.last_activity')) 
-            ->setUrl(route('get.closed.ticket'))
-            ->setOptions('aoColumnDefs',array(
-            array(
-            'render' => "function ( data, type, row ) {
-            var t = row[6].split(/[- :,/ :,. /]/);
-            var d = new Date(t[0], t[1]-1, t[2], t[3], t[4], t[5]);
-            <!--  -->
-            var dtf= '$date_time_format';
-            if(dtf==1) {
-            dtf = 'D/MMM/YYYY hh:mm:ss A';
-            } else if(dtf==2) {
-            dtf = 'D MMM, YYYY hh:mm:ss A';
-            } else if(dtf==3) {
-            dtf = 'D-MMM-YYYY hh:mm:ss A';
-            } else if(dtf==4) {
-            dtf = 'MMM/D/YYYY hh:mm:ss A';
-            } else if(dtf==5) {
-            dtf = 'MMM D, YYYY hh:mm:ss A';
-            } else if(dtf==6) {
-            dtf = 'MMM-D-YYYY hh:mm:ss A';
-            } else if(dtf==7) {
-            dtf = 'YYYY/MMM/D hh:mm:ss A';
-            } else if(dtf==8) {
-            dtf = 'YYYY, MMM D hh:mm:ss A';
-            } else if(dtf==9) {
-            dtf = 'YYYY-MMM-D hh:mm:ss A';
-            }
-            return  moment(d).format(dtf);
-            <!-- //return d; -->
-            }", 
-            'aTargets' => array(6))
-            ))
-            ->setOrder(array(6=>'desc'))  
-            ->setClass('table table-hover table-bordered table-striped')
-            ->setCallbacks("fnRowCallback",'function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
-            var str = aData[3];
-            if(str.search("#000") == -1) {
-            $("td", nRow).css({"background-color":"#F3F3F3", "font-weight":"600", "border-bottom":"solid 0.5px #ddd", "border-right":"solid 0.5px #F3F3F3"});
-            $("td", nRow).mouseenter(function(){
-            $("td", nRow).css({"background-color":"#DEDFE0", "font-weight":"600", "border-bottom":"solid 0.5px #ddd", "border-right":"solid 0.5px #DEDFE0"});
-            });
-            $("td", nRow).mouseleave(function(){
-            $("td", nRow).css({"background-color":"#F3F3F3", "font-weight":"600", "border-bottom":"solid 0.5px #ddd","border-right":"solid 0.5px #F3F3F3"});
-            });
-            } else {
-            $("td", nRow).css({"background-color":"white", "border-bottom":"solid 0.5px #ddd", "border-right":"solid 0.5px white"});
-            $("td", nRow).mouseenter(function(){
-            $("td", nRow).css({"background-color":"#DEDFE0", "border-bottom":"solid 0.5px #ddd", "border-right":"solid 0.5px #DEDFE0"});
-            });
-            $("td", nRow).mouseleave(function(){
-            $("td", nRow).css({"background-color":"white", "border-bottom":"solid 0.5px #ddd", "border-right":"solid 0.5px white"});
-            });   
-            }
-            }')       
-            ->render();!!}
+            {!!$table->render('vendor.Chumper.template')!!}
 
         </div><!-- /.mail-box-messages -->
         {!! Form::close() !!}
@@ -150,7 +116,7 @@ if (Auth::user()->role == 'agent') {
 </div>
 
 
-
+{!! $table->script('vendor.Chumper.ticket-javascript') !!}
 <script>
     var option = null;
     $(function() {

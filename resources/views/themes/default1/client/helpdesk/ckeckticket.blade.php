@@ -1,5 +1,4 @@
 @extends('themes.default1.client.layout.client')
-
 @section('content')               
 <?php
 $tickets = App\Model\helpdesk\Ticket\Tickets::where('id', '=', \Crypt::decrypt($id))->first();
@@ -16,9 +15,11 @@ $thread = App\Model\helpdesk\Ticket\Ticket_Thread::where('ticket_id', '=', \Cryp
             </div> 
             <div class="col-md-3">
                 <div class="pull-right">
+
                     <!-- <button type="button" class="btn btn-default"><i class="fa fa-edit" style="color:green;"> </i> Edit</button> -->                            
                     {{-- <button type="button" class="btn btn-default"><i class="fa fa-print" style="color:blue;"> </i> {!! link_to_route('ticket.print','Print',[$tickets->id]) !!}</button> --}}
                     <!-- </div> -->
+                    @if( $common_setting->status == '1')
                     <div class="btn-group"> 
                         <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><i class="fa fa-exchange" style="color:teal;"> </i> 
                             {!! Lang::get('lang.change_status') !!} <span class="caret"></span>
@@ -30,7 +31,7 @@ $thread = App\Model\helpdesk\Ticket\Ticket_Thread::where('ticket_id', '=', \Cryp
                             <li><a href="#" id="close"><i class="fa fa-check" style="color:#15F109;"> </i>{!! Lang::get('lang.close') !!}</a></li>
                             <li><a href="#" id="resolved"><i class="fa fa-check-circle " style="color:#0EF1BE;"> </i> {!! Lang::get('lang.resolved') !!}</a></li>
                         </ul>
-                    </div>
+                    </div>@endif
                     {!! Form::close() !!}
                 </div>
             </div>
@@ -41,6 +42,7 @@ $thread = App\Model\helpdesk\Ticket\Ticket_Thread::where('ticket_id', '=', \Cryp
                     <table><tbody>
                             <?php $ratings = App\Model\helpdesk\Ratings\Rating::orderby('display_order')->get(); ?>
                         <form id="foo">
+                            {!! csrf_field() !!}
                             @foreach($ratings as $rating) 
 
                             @if($rating->rating_area == 'Helpdesk Area')
@@ -166,69 +168,11 @@ $thread = App\Model\helpdesk\Ticket\Ticket_Thread::where('ticket_id', '=', \Cryp
 </div>
 <?php
 $conversations = App\Model\helpdesk\Ticket\Ticket_Thread::where('ticket_id', '=', $tickets->id)->where('is_internal', '=', 0)->paginate(10);
+$ij = App\Model\helpdesk\Ticket\Ticket_Thread::where('ticket_id', '=', $tickets->id)->first();
+$user = App\User::where('id', '=', $tickets->user_id)->first();
 foreach ($conversations as $conversation) {
-    $ConvDate1 = $conversation->created_at;
-    $ConvDate = explode(' ', $ConvDate1);
-
-    $date = $ConvDate[0];
-    $time = $ConvDate[1];
-    $time = substr($time, 0, -3);
-    if (isset($data) && $date == $data) {
-        
-    } else {
-        $data = $ConvDate[0];
-    }
-    $role = App\User::where('id', '=', $conversation->user_id)->first();
-
-    $attachment = App\Model\helpdesk\Ticket\Ticket_attachments::where('thread_id', '=', $conversation->id)->first();
-    if ($attachment == null) {
-        $body = $conversation->body;
-    } else {
-        $body = $conversation->body;
-        $attachments = App\Model\helpdesk\Ticket\Ticket_attachments::where('thread_id', '=', $conversation->id)->orderBy('id', 'DESC')->get();
-        foreach ($attachments as $attachment) {
-            if ($attachment->type == 'pdf') {
-                
-            } elseif ($attachment->type == 'docx') {
-                
-            } else {
-                $image = @imagecreatefromstring($attachment->file);
-                ob_start();
-                imagejpeg($image, null, 80);
-                $data = ob_get_contents();
-                ob_end_clean();
-                $var = '<img src="data:image/jpg;base64,' . base64_encode($data) . '" />';
-                $body = str_replace($attachment->name, "data:image/jpg;base64," . base64_encode($data), $body);
-
-                $string = $body;
-                $start = "<head>";
-                $end = "</head>";
-                if (strpos($string, $start) == false || strpos($string, $start) == false) {
-                    
-                } else {
-                    $ini = strpos($string, $start);
-                    $ini += strlen($start);
-                    $len = strpos($string, $end, $ini) - $ini;
-                    $parsed = substr($string, $ini, $len);
-                    $body2 = $parsed;
-                    $body = str_replace($body2, " ", $body);
-                }
-            }
-        }
-    }
-    $string = $body;
-    $start = "<head>";
-    $end = "</head>";
-    if (strpos($string, $start) == false || strpos($string, $start) == false) {
-        
-    } else {
-        $ini = strpos($string, $start);
-        $ini += strlen($start);
-        $len = strpos($string, $end, $ini) - $ini;
-        $parsed = substr($string, $ini, $len);
-        $body2 = $parsed;
-        $body = str_replace($body2, " ", $body);
-    }
+    $role = $conversation->user;
+    $body = $conversation->thread($conversation->body);
     ?>
     <ol class="comment-list" >
         <li class="comment">
@@ -253,6 +197,7 @@ foreach ($conversations as $conversation) {
                                     }
                                     ?>
                                 <form class="foo2">
+                                {{ csrf_field() }}
                                     <tr>
                                         <th><div class="ticketratingtitle">{!! $rating->name !!} &nbsp;</div></th>&nbsp
 
@@ -260,10 +205,10 @@ foreach ($conversations as $conversation) {
                                         <?php for ($i = 1; $i <= $rating->rating_scale; $i++) { ?>
                                             <input type="radio" class="star" id="star5" name="{!! $rating->name !!},{!! $conversation->id !!}" value="{!! $i !!}"<?php echo ($ratingval == $i) ? 'checked' : '' ?> />
                                         <?php } ?>
-            <!--    <input type="radio" class="star" id="star4" name="rating" value="2"<?php echo ($tickets->rating == '2') ? 'checked' : '' ?> />
-                <input type="radio" class="star" id="star3" name="rating" value="3"<?php echo ($tickets->rating == '3') ? 'checked' : '' ?>/>
-                <input type="radio" class="star" id="star2" name="rating" value="4"<?php echo ($tickets->rating == '4') ? 'checked' : '' ?>/>
-                <input type="radio" class="star" id="star1" name="rating" value="5"<?php echo ($tickets->rating == '5') ? 'checked' : '' ?> />-->
+    <!--    <input type="radio" class="star" id="star4" name="rating" value="2"<?php echo ($tickets->rating == '2') ? 'checked' : '' ?> />
+    <input type="radio" class="star" id="star3" name="rating" value="3"<?php echo ($tickets->rating == '3') ? 'checked' : '' ?>/>
+    <input type="radio" class="star" id="star2" name="rating" value="4"<?php echo ($tickets->rating == '4') ? 'checked' : '' ?>/>
+    <input type="radio" class="star" id="star1" name="rating" value="5"<?php echo ($tickets->rating == '5') ? 'checked' : '' ?> />-->
                                     </td> 
                                     </tr>
                                 </form>
@@ -279,9 +224,71 @@ foreach ($conversations as $conversation) {
                     </div><!-- .comment-metadata -->
                 </footer><!-- .comment-meta -->
                 <div class="comment-content">
-                    <p>{!! $body !!}</p>
+                   @if($conversation->firstContent()=='yes')
+                                             <div class="embed-responsive embed-responsive-16by9">
+                                            <iframe id="loader_frame{{$conversation->id}}" class="embed-responsive-item">Body of html email here</iframe>
+<script type="text/javascript">
+jQuery(document).ready(function () {
+/*          setInterval(function(){
+            var mydiv = jQuery('#loader_frame{{$conversation->id}}').contents().find("body");
+            var h     = mydiv.height();
+alert(h+20);
+            }, 2000);*/
+                jQuery('.embed-responsive-16by9').css('height','auto');
+            jQuery('.embed-responsive-16by9').css('padding','0');
+            jQuery('#loader_frame{{$conversation->id}}').css('width','100%');
+            jQuery('#loader_frame{{$conversation->id}}').css('position','static');
+            jQuery('#loader_frame{{$conversation->id}}').css('border','none');
+            var mydiv = jQuery('#loader_frame{{$conversation->id}}').contents().find("body");
+            var h     = mydiv.height();
+            jQuery('#loader_frame{{$conversation->id}}').css('height', h+20);
+            setInterval(function(){
+            //var mydiv = jQuery('#loader_frame{{$conversation->id}}').contents().find("body");
+            //alert(mydiv.height());
+                h = jQuery('#loader_frame{{$conversation->id}}').height();
+                if (!!navigator.userAgent.match(/Trident\/7\./)){
+                    jQuery('#loader_frame{{$conversation->id}}').css('height', h);
+                }else {
+                    jQuery('#loader_frame{{$conversation->id}}').css('height', h);
+                }
+            }, 2000);
+        });
+</script>
+                                            </div>
+                                            <script>
+                                                 setTimeout(function(){ 
+                                                       $('#loader_frame{{$conversation->id}}')[0].contentDocument.body.innerHTML = '<body><style>body{display:inline-block;}</style>{!!$conversation->purify()!!}<body>';   }, 1000);
+                                                
+                                            </script>
+                                            @else 
+                                            {!! $conversation->body !!}
+                                            @endif
+                                            
+                    @if($conversation->id == $ij->id)
+                    <?php $ticket_form_datas = App\Model\helpdesk\Ticket\Ticket_Form_Data::where('ticket_id', '=', $tickets->id)->get(); ?>
+                    @if(isset($ticket_form_datas))
+
+                    <br/>
+                    <table class="table table-bordered">
+                        <tbody>
+                            @foreach($ticket_form_datas as $ticket_form_data)
+                            <tr>
+                                <td style="width: 30%">{!! $ticket_form_data->getFieldKeyLabel() !!}</td>
+                                <td>{!! removeUnderscore($ticket_form_data->content) !!}</td>
+                            </tr>
+                            @endforeach
+                        </tbody></table>
+
+                    @endif
+                    @endif
                 </div><!-- .comment-content -->
+                <br/><br/>
                 <div class="timeline-footer" style="margin-bottom:-5px">
+                    @if(!$conversation->is_internal)
+                    @if($conversation->user_id != null)
+                    <?php Event::fire(new App\Events\Timeline($conversation, $role, $user)); ?>
+                    @endif
+                    @endif
                     <?php
                     $attachments = App\Model\helpdesk\Ticket\Ticket_attachments::where('thread_id', '=', $conversation->id)->get();
                     $i = 0;
@@ -302,16 +309,14 @@ foreach ($conversations as $conversation) {
                             $power = $size > 0 ? floor(log($size, 1024)) : 0;
                             $value = number_format($size / pow(1024, $power), 2, '.', ',') . ' ' . $units[$power];
                             if ($attachment->poster == 'ATTACHMENT') {
-                                if ($attachment->type == 'jpg' || $attachment->type == 'JPG' || $attachment->type == 'jpeg' || $attachment->type == 'JPEG' || $attachment->type == 'png' || $attachment->type == 'PNG' || $attachment->type == 'gif' || $attachment->type == 'GIF') {
-                                    $image = @imagecreatefromstring($attachment->file);
-                                    ob_start();
-                                    imagejpeg($image, null, 80);
-                                    $data = ob_get_contents();
-                                    ob_end_clean();
-                                    $var = '<a href="' . URL::route('image', array('image_id' => $attachment->id)) . '" target="_blank"><img style="max-width:200px;height:133px;" src="data:image/jpg;base64,' . base64_encode($data) . '"/></a>';
+                                if (mime($attachment->type) == true) {
+                                    $var = '<a href="' . URL::route('image', array('image_id' => $attachment->id)) . '" target="_blank"><img style="max-width:200px;height:133px;" src="data:image/jpg;base64,' . $attachment->file . '"/></a>';
+
                                     echo '<li style="background-color:#f4f4f4;"><span class="mailbox-attachment-icon has-img">' . $var . '</span><div class="mailbox-attachment-info"><b style="word-wrap: break-word;">' . $attachment->name . '</b><br/><p>' . $value . '</p></div></li>';
                                 } else {
-                                    $var = '<a style="max-width:200px;height:133px;color:#666;" href="' . URL::route('image', array('image_id' => $attachment->id)) . '" target="_blank"><span class="mailbox-attachment-icon" style="background-color:#fff;">' . strtoupper($attachment->type) . '</span><div class="mailbox-attachment-info"><span ><b style="word-wrap: break-word;">' . $attachment->name . '</b><br/><p>' . $value . '</p></span></div></a>';
+                                    //$var = '<a href="' . URL::route('image', array('image_id' => $attachment->id)) . '" target="_blank"><img style="max-width:200px;height:133px;" src="data:'.$attachment->type.';base64,' . base64_encode($data) . '"/></a>';
+                                    $var = '<a style="max-width:200px;height:133px;color:#666;" href="' . URL::route('image', array('image_id' => $attachment->id)) . '" target="_blank"><span class="mailbox-attachment-icon" style="background-color:#fff; font-size:18px;">' . strtoupper($attachment->type) . '</span><div class="mailbox-attachment-info"><span ><b style="word-wrap: break-word;">' . $attachment->name . '</b><br/><p>' . $value . '</p></span></div></a>';
+
                                     echo '<li style="background-color:#f4f4f4;">' . $var . '</li>';
                                 }
                             }
@@ -361,35 +366,44 @@ foreach ($conversations as $conversation) {
         <div class="form-group">
             <div class="col-md-12">
                 <div class="form-group ">
-                    <textarea class="form-control" name="comment" cols="30" rows="8"></textarea>
+                    <textarea class="form-control" id="reply-input" name="comment" cols="30" rows="8"></textarea>
                 </div>
             </div>                                              
         </div>
     </div>
     <div class="text-right">
-        <button type="submit" class="btn btn-custom btn-lg">{!! Lang::get('lang.post_comment') !!}</button>
+        <button type="submit" onClick="return checkFunction();" class="btn btn-custom btn-lg">{!! Lang::get('lang.post_comment') !!}</button>
     </div>
     {!! Form::close() !!}
 </div>
 
 <script type="text/javascript">
-    $("#cc_page").on('click', '.search_r', function() {
+    function checkFunction() {
+        var x;
+        x = document.getElementById("reply-input").value;
+        if (x == "") {
+            alert("{{Lang::get('lang.reply-can-not-be-empty')}}");
+            return false;
+        };
+    }
+
+    $("#cc_page").on('click', '.search_r', function () {
         var search_r = $('a', this).attr('id');
         $.ajax({
             type: "GET",
             url: "../ticket/status/{{$tickets->id}}/" + search_r,
-            beforeSend: function() {
+            beforeSend: function () {
                 $("#refresh").hide();
                 $("#loader").show();
             },
-            success: function(response) {
+            success: function (response) {
                 $("#refresh").load("../check_ticket/{!! $id !!}  #refresh");
                 $("#refresh").show();
                 $("#loader").hide();
                 var message = response;
                 $("#alert11").show();
                 $('#message-success1').html(message);
-                setInterval(function() {
+                setInterval(function () {
                     $("#alert11").hide();
                 }, 4000);
             }
@@ -397,19 +411,19 @@ foreach ($conversations as $conversation) {
         return false;
     });
 
-    $(document).ready(function() {
+    $(document).ready(function () {
         var Data = $('input[name="rating"]:checked').val();
         var Data2 = $('input[name="rating2"]:checked').val();
         if (Data) {
             $('input[name=rating]').rating('readOnly');
             jQuery('.star').attr('disabled', true);
         }
-        $('.star').change(function() {
+        $('.star').change(function () {
             $('#foo').submit();
             $('.foo2').submit();
         });
         // process the form
-        $('#foo').submit(function(event) {
+        $('#foo').submit(function (event) {
             // get the form data
             // there are many ways to get this data using jQuery (you can use the class or id also)
             var formData = $(this).serialize();
@@ -420,7 +434,7 @@ foreach ($conversations as $conversation) {
                 url: '../rating/' +<?php echo $tickets->id ?>, // the url where we want to POST
                 data: formData, // our data object
                 dataType: 'json', // what type of data do we expect back from the server
-                success: function() {
+                success: function () {
                 }
             });
             // using the done promise callback
@@ -428,7 +442,7 @@ foreach ($conversations as $conversation) {
             event.preventDefault();
         });
         // process the form
-        $('.foo2').submit(function(event) {
+        $('.foo2').submit(function (event) {
             // get the form data
             // there are many ways to get this data using jQuery (you can use the class or id also)
             var formData = $(this).serialize();
@@ -439,7 +453,7 @@ foreach ($conversations as $conversation) {
                 url: '../rating2/' +<?php echo $tickets->id ?>, // the url where we want to POST
                 data: formData, // our data object
                 dataType: 'json', // what type of data do we expect back from the server
-                success: function() {
+                success: function () {
                 }
             });
             // using the done promise callback
@@ -447,22 +461,22 @@ foreach ($conversations as $conversation) {
             event.preventDefault();
         });
     });
-    $(function() {
+    $(function () {
         //Add text editor
         $("textarea").wysihtml5();
     });
 
-    jQuery(document).ready(function() {
+    jQuery(document).ready(function () {
         // Close a ticket
-        $('#close').on('click', function(e) {
+        $('#close').on('click', function (e) {
             $.ajax({
                 type: "GET",
                 url: "../ticket/close/{{$tickets->id}}",
-                beforeSend: function() {
+                beforeSend: function () {
                     $("#refresh").hide();
                     $("#loader").show();
                 },
-                success: function(response) {
+                success: function (response) {
                     $("#refresh").load("../check_ticket/{!! $id !!}  #refresh");
                     $("#refresh").show();
                     $("#loader").hide();
@@ -485,24 +499,24 @@ foreach ($conversations as $conversation) {
         });
 
         // Resolved  a ticket
-        $('#resolved').on('click', function(e) {
+        $('#resolved').on('click', function (e) {
             $.ajax({
                 type: "GET",
                 url: "../ticket/resolve/{{$tickets->id}}",
-                beforeSend: function() {
+                beforeSend: function () {
                     $("#refresh").hide();
                     $("#loader").show();
                 },
-                success: function(response) {
+                success: function (response) {
                     $("#refresh").load("../check_ticket/{!! $id !!}  #refresh");
                     $("#refresh").show();
                     $("#loader").hide();
                     var message = "Success! Your Ticket have been Resolved";
                     $("#alert11").show();
                     $('#message-success1').html(message);
-                    setInterval(function() {
+                    setInterval(function () {
                         $("#alert11").hide();
-                        setTimeout(function() {
+                        setTimeout(function () {
                             var link = document.querySelector('#load-inbox');
                             if (link) {
                                 link.click();
@@ -515,15 +529,15 @@ foreach ($conversations as $conversation) {
         });
 
         // Open a ticket
-        $('#open').on('click', function(e) {
+        $('#open').on('click', function (e) {
             $.ajax({
                 type: "GET",
                 url: "../ticket/open/{{$tickets->id}}",
-                beforeSend: function() {
+                beforeSend: function () {
                     $("#refresh").hide();
                     $("#loader").show();
                 },
-                success: function(response) {
+                success: function (response) {
                     $("#refresh").load("../check_ticket/{!! $id !!}  #refresh");
                     $("#refresh").show();
                     $("#loader").hide();
@@ -531,7 +545,7 @@ foreach ($conversations as $conversation) {
                     var message = "Success! Your Ticket have been Opened";
                     $("#alert11").show();
                     $('#message-success1').html(message);
-                    setInterval(function() {
+                    setInterval(function () {
                         $("#alert11").hide();
                     }, 4000);
                 }

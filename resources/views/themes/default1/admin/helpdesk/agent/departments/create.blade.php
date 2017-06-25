@@ -17,7 +17,7 @@ class="active"
 @stop
 <!-- header -->
 @section('PageHeader')
-<h1>{{Lang::get('lang.staffs')}}</h1>
+<h1>{{Lang::get('lang.departments')}}</h1>
 @stop
 <!-- /header -->
 <!-- breadcrumbs -->
@@ -88,7 +88,7 @@ class="active"
             <!-- manager -->
             <div class="col-xs-6 form-group {{ $errors->has('manager') ? 'has-error' : '' }}">
                 {!! Form::label('manager',Lang::get('lang.manager')) !!}
-                {!!Form::select('manager',[''=>Lang::get('lang.select_a_manager'),Lang::get('lang.manager')=>$user->lists('user_name','id')->toArray()],null,['class' => 'form-control select']) !!}
+                {!!Form::select('manager',[''=>Lang::get('lang.select_a_manager'),Lang::get('lang.manager')=>$user->lists('full_name','id')->toArray()],null,['class' => 'form-control select']) !!}
             </div>
         </div>
     </div>
@@ -102,6 +102,9 @@ class="active"
                 {!! Form::label('outgoing_email',Lang::get('lang.outgoing_email')) !!}
                 {!!Form::select('outgoing_email', ['' => Lang::get('lang.system_default'), Lang::get('lang.emails')=>$emails->lists('email_name','id')->toArray()],null,['class' => 'form-control select']) !!}
             </div>
+        </div>
+        <div class="form-group">
+            <input type="checkbox" name="sys_department"> {{ Lang::get('lang.make-default-department')}}
         </div>
     </div>
     <div class="box-footer">

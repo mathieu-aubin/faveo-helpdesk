@@ -33,7 +33,7 @@ return [
       | This tells about aplication current version.
       |
      */
-    'version' => 'Community 1.0.7.8',
+    'version' => 'Community 1.9.6',
     /*
       |--------------------------------------------------------------------------
       | Application Name
@@ -42,7 +42,7 @@ return [
       | This Applocation name is used for installation and update checking
       |
      */
-    'name' => 'Faveo helpdesk community',
+        'name' => 'Faveo Helpdesk Community',
     /*
       |--------------------------------------------------------------------------
       | Application URL
@@ -136,11 +136,9 @@ return [
         'Illuminate\Broadcasting\BroadcastServiceProvider',
         'DaveJamesMiller\Breadcrumbs\ServiceProvider',
         /*
-         */
-
-        /*
          * Laravel Framework Service Providers...
          */
+
         'Illuminate\Auth\AuthServiceProvider',
         'Illuminate\Bus\BusServiceProvider',
         'Illuminate\Cache\CacheServiceProvider',
@@ -151,7 +149,7 @@ return [
         'Illuminate\Filesystem\FilesystemServiceProvider',
         'Illuminate\Foundation\Providers\FoundationServiceProvider',
         'Illuminate\Hashing\HashServiceProvider',
-        'Illuminate\Mail\MailServiceProvider',
+        Illuminate\Mail\MailServiceProvider::class,
         'Illuminate\Pagination\PaginationServiceProvider',
         'Illuminate\Pipeline\PipelineServiceProvider',
         'Illuminate\Queue\QueueServiceProvider',
@@ -169,17 +167,27 @@ return [
         'App\Providers\EventServiceProvider',
         'App\Providers\RouteServiceProvider',
         'App\Providers\ConfigServiceProvider',
+        'App\Providers\ComposerServiceProvider',
         'Propaganistas\LaravelPhone\LaravelPhoneServiceProvider',
         'Bugsnag\BugsnagLaravel\BugsnagLaravelServiceProvider',
         'Vsmoraes\Pdf\PdfServiceProvider',
         'Thomaswelton\LaravelGravatar\LaravelGravatarServiceProvider',
         'Chumper\Datatable\DatatableServiceProvider',
         'Chumper\Zipper\ZipperServiceProvider',
-        'Bestmomo\Filemanager\FilemanagerServiceProvider',
-        'Unisharp\Laravelfilemanager\LaravelFilemanagerServiceProvider',
-        'Intervention\Image\ImageServiceProvider',
         'Tymon\JWTAuth\Providers\JWTAuthServiceProvider',
-        'Torann\GeoIP\GeoIPServiceProvider',
+       \Torann\GeoIP\GeoIPServiceProvider::class,
+        Unisharp\Laravelfilemanager\LaravelFilemanagerServiceProvider::class,
+        Intervention\Image\ImageServiceProvider::class,
+        Unisharp\Ckeditor\ServiceProvider::class,
+        LaravelFCM\FCMServiceProvider::class,
+        Barryvdh\Debugbar\ServiceProvider::class,
+        Collective\Bus\BusServiceProvider::class,
+        Maatwebsite\Excel\ExcelServiceProvider::class,
+        Laravel\Socialite\SocialiteServiceProvider::class,
+        App\FaveoLog\LaravelLogViewerServiceProvider::class,
+        App\FaveoStorage\StorageServiceProvider::class,
+        Yajra\Datatables\DatatablesServiceProvider::class,
+
     ],
     /*
       |--------------------------------------------------------------------------
@@ -234,12 +242,20 @@ return [
         'SMTPS'       => 'App\Http\Controllers\HomeController',
         'Datatable'   => 'Chumper\Datatable\Facades\DatatableFacade',
         'Zipper'      => 'Chumper\Zipper\Zipper',
-        'Image'       => 'Intervention\Image\Facades\Image',
         'JWTAuth'     => 'Tymon\JWTAuth\Facades\JWTAuth',
         'JWTFactory'  => 'Tymon\JWTAuth\Facades\JWTFactory',
         'Breadcrumbs' => 'DaveJamesMiller\Breadcrumbs\Facade',
-        'GeoIP'       => 'Torann\GeoIP\GeoIPFacade',
+        'GeoIP'       => \Torann\GeoIP\Facades\GeoIP::class,
+        'Image'       => Intervention\Image\Facades\Image::class,
+        'FCM'         => LaravelFCM\Facades\FCM::class,
+        'FCMGroup'    => LaravelFCM\Facades\FCMGroup::class,
+        'Debugbar'    => Barryvdh\Debugbar\Facade::class,
+        'Excel'       => Maatwebsite\Excel\Facades\Excel::class,
+        'Socialite'   => Laravel\Socialite\Facades\Socialite::class,
+        'UnAuth'      => 'App\Http\Controllers\Client\helpdesk\UnAuthController',
+        'Finder'      => App\Helper\Finder::class,
+        'Datatables'  => Yajra\Datatables\Facades\Datatables::class,
+
     ],
-    'token' => 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwiaXNzIjoiaHR0cDpcL1wvbG9jYWxob3N0XC9mYXZlby1oZWxwZGVzay1naXRodWJcL3B1YmxpY1wvYXBpXC92MVwvYXV0aGVudGljYXRlIiwiaWF0IjoxNDU1NzAyNDEyLCJleHAiOjE0NTU3MDYwMTIsIm5iZiI6MTQ1NTcwMjQxMiwianRpIjoiOTdlODg1ODNjOWQyNDIzNWQ4MzI3Y2ExNzI1NDY1MDQifQ.37E7H2kRCQuz5oBRkQLKhNNpaNXyk4FiEYS9RQ7HZPY',
-    'name'  => 'faveo helpdesk community',
+
 ];

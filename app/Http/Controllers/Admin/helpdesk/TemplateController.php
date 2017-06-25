@@ -17,7 +17,6 @@ use App\Model\helpdesk\Utility\Languages;
 use Exception;
 use Illuminate\Http\Request;
 use Input;
-use Lang;
 
 /**
  * TemplateController.
@@ -319,52 +318,28 @@ class TemplateController extends Controller
     public function postDiagno(DiagnosRequest $request)
     {
         try {
-            $email_details = Emails::where('id', '=', $request->from)->first();
-            if ($email_details->sending_protocol == 'mail') {
-                $mail = new \PHPMailer(); // defaults to using php "mail()"
-                $mail->IsSendmail(); // telling the class to use SendMail transport
-                $mail->SetFrom($email_details->email_address, $email_details->email_name); // sender details
-                $address = $request->to; // receiver email
-                $mail->AddAddress($address);
-                $mail->Subject = utf8_decode($request->subject); // subject of the email
-                $body = utf8_decode($request->message); // body of the email
-                $mail->MsgHTML($body);
-                if (!$mail->Send()) {
-                    $return = Lang::get('lang.mailer_error').': '.$mail->ErrorInfo;
-                } else {
-                    $return = Lang::get('lang.message_has_been_sent');
-                }
-            } elseif ($email_details->sending_protocol == 'smtp') {
-                $mail = new \PHPMailer();
-                $mail->isSMTP();                                            // Set mailer to use SMTP
-                if ($email_details->smtp_validate == '1') {
-                    $mail->SMTPOptions = [
-                        'ssl' => [
-                            'verify_peer'       => false,
-                            'verify_peer_name'  => false,
-                            'allow_self_signed' => true,
-                        ],
-                    ];
-                }
-                $mail->Host = $email_details->sending_host;                 // Specify main and backup SMTP servers
-                $mail->SMTPAuth = true;                                     // Enable SMTP authentication
-                $mail->Username = $email_details->email_address;                 // SMTP username
-                $mail->Password = \Crypt::decrypt($email_details->password);                           // SMTP password
-                $mail->SMTPSecure = $email_details->sending_encryption;                            // Enable TLS encryption, `ssl` also accepted
-                $mail->Port = $email_details->sending_port;                                    // TCP port to connect to
-                $mail->setFrom($email_details->email_address, $email_details->email_name);
-                $mail->addAddress($request->to, '');     // Add a recipient
-                $mail->isHTML(true);                                  // Set email format to HTML
-                $mail->Subject = utf8_decode($request->subject);
-                $mail->Body = utf8_decode($request->message);
-                if (!$mail->send()) {
-                    $return = Lang::get('lang.mailer_error').': '.$mail->ErrorInfo;
-                } else {
-                    $return = Lang::get('lang.message_has_been_sent');
-                }
+            $to = $request->input('to');
+            $subject = $request->input('subject');
+            $msg = $request->input('message');
+            $from = $request->input('from');
+            $from_address = Emails::where('id', '=', $from)->first();
+            if (!$from_address) {
+                throw new Exception('Sorry! We can not find your request');
             }
+            $to_address = [
 
-            return redirect()->back()->with('success', $return);
+                'name'  => '',
+                'email' => $to,
+            ];
+            $message = [
+                'subject'  => $subject,
+                'scenario' => null,
+                'body'     => $msg,
+            ];
+
+            $this->PhpMailController->sendmail($from, $to_address, $message, [], []);
+
+            return redirect()->back()->with('success', 'Mail has send successfully');
         } catch (Exception $e) {
             return redirect()->back()->with('fails', $e->getMessage());
         }

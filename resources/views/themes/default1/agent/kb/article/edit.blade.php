@@ -15,7 +15,7 @@ class="active"
 @stop
 
 @section('content')
-<script src="{{asset('ckeditor/ckeditor.js')}}"></script>
+ <script src="{{asset('vendor/unisharp/laravel-ckeditor/ckeditor.js')}}"></script>
 {!! Form::model($article,['url' => 'article/'.$article->id , 'method' => 'PATCH'] )!!}
 <div class="row">
     <div class="content-header">
@@ -85,11 +85,13 @@ class="active"
                     {!! Form::textarea('description',$article->description,['class' => 'form-control','id'=>'editor','size' => '128x20','placeholder'=>Lang::get('lang.enter_the_description')]) !!}
                 </div>
                 <script>
-CKEDITOR.replace('editor', {
-    filebrowserImageBrowseUrl: '../../laravel-filemanager?type=Images',
-    filebrowserImageUploadUrl: '../../laravel-filemanager/upload?type=Images&_token={{csrf_token()}}',
-});
-                </script>
+  CKEDITOR.replace( 'description', {
+    filebrowserImageBrowseUrl: "{{url('laravel-filemanager?type=Images')}}",
+    filebrowserImageUploadUrl: "{{url('laravel-filemanager/upload?type=Images')}}",
+    filebrowserBrowseUrl: "{{url('laravel-filemanager?type=Files')}}",
+    filebrowserUploadUrl: "{{url('laravel-filemanager/upload?type=Files')}}"
+  });
+</script>
             </div>
         </div>
     </div>
@@ -167,7 +169,17 @@ CKEDITOR.replace('editor', {
                     </div>
                     {!! Form::close() !!}
                     <div class="box-footer" style="background-color:#f5f5f5;">
-                        {!! Form::submit(Lang::get('lang.publish'),['class'=>'btn btn-primary'])!!}
+                        <div class="row">
+                            <div class="col-md-4">
+                                {!! Form::submit(Lang::get('lang.publish'),['class'=>'btn btn-primary'])!!}
+                            </div>
+                            <div class="col-md-4">
+                                <a href="#" data-toggle="modal" data-target="#deletearticle{{$article->id}}"  class="btn btn-danger pull-right">{{Lang::get('lang.delete')}}</a>
+                            </div>
+                            <div class="col-md-4">
+                                <a href="{{url('show/'.$article->slug)}}" target="_blank" class="btn btn-primary">{{Lang::get('lang.show')}}</a>
+                            </div>
+                        </div>
                     </div>
                     </li>
                     <li>
@@ -224,5 +236,38 @@ CKEDITOR.replace('editor', {
                         </div>
                     </li>
                     </ul>
+    
+<script>
+    $(function() {
+        
+        $('input[type="checkbox"]').iCheck({
+            checkboxClass: 'icheckbox_flat-blue'
+        });
+        $('input[type="radio"]').iCheck({
+            radioClass: 'iradio_flat-blue'
+        });
+    
+    });        
+</script>
+
                     @stop
                     <!-- /content -->
+                    
+                    
+                    <div class="modal fade" id="deletearticle{{$article->id}}">
+        			<div class="modal-dialog">
+            			<div class="modal-content">
+                			<div class="modal-header">
+                    			<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    			<h4 class="modal-title">Are You Sure ?</h4>
+                			</div>
+                			<div class="modal-body">
+                				{{$article->name}}
+                			</div>
+                			<div class="modal-footer">
+                    			<button type="button" class="btn btn-default pull-left" data-dismiss="modal" id="dismis2">Close</button>
+                    			<a href='{{url("article/delete/$article->slug")}}'><button class="btn btn-danger">delete</button></a>
+                			</div>
+            			</div><!-- /.modal-content -->
+        			</div><!-- /.modal-dialog -->
+    			</div>

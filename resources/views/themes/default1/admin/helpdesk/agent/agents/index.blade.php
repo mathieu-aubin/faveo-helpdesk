@@ -29,10 +29,11 @@ class="active"
 @section('content')
 <div class="box box-primary">
     <div class="box-header">
-        <h2 class="box-title">{!! Lang::get('lang.list_of_agents') !!} </h2><a href="{{route('agents.create')}}" class="btn btn-primary pull-right">{!! Lang::get('lang.create_an_agent') !!}</a></div>
+        <h2 class="box-title">{!! Lang::get('lang.list_of_agents') !!} </h2><a href="{{route('agents.create')}}" class="btn btn-primary pull-right">
+        <span class="glyphicon glyphicon-plus"></span> &nbsp;{!! Lang::get('lang.create_an_agent') !!}</a></div>
     <div class="box-body table-responsive">
         <?php
-        $user = App\User::where('role', '!=', 'user')->orderBy('id', 'ASC')->paginate(20);
+        $user = App\User::where('role', '!=', 'user')->orderBy('id', 'ASC')->paginate(10);
         ?>
         <!-- check whether success or not -->
         @if(Session::has('success'))
@@ -110,6 +111,9 @@ class="active"
             @endif
             @endforeach
         </table>
+        <div class="pull-right" style="margin-top : -10px; margin-bottom : -10px;">
+            {!! $user->links() !!}
+        </div>
     </div>
 </div>
 @stop

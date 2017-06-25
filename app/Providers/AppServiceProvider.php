@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Model\Update\BarNotification;
+use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Support\ServiceProvider;
+use Queue;
 use View;
 
 class AppServiceProvider extends ServiceProvider
@@ -20,10 +22,16 @@ class AppServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app->bind('Illuminate\Contracts\Auth\Registrar');
+        require_once __DIR__.'/../Http/helpers.php';
     }
 
     public function boot()
     {
+        Queue::failing(function (JobFailed $event) {
+            loging('Failed Job - '.$event->connectionName, json_encode($event->data));
+            $failedid = $event->failedId;
+            //\Artisan::call('queue:retry',['id'=>[$failedid]]);
+        });
         // Please note the different namespace
         // and please add a \ in front of your classes in the global namespace
         \Event::listen('cron.collectJobs', function () {
@@ -47,12 +55,12 @@ class AppServiceProvider extends ServiceProvider
 
     public function composer()
     {
-        View::composer('themes.default1.update.notification', function () {
+        \View::composer('themes.default1.update.notification', function () {
             $notification = new BarNotification();
-            $data = [
-                'data' => $notification->get(),
+            $not = [
+                'notification' => $notification->where('value', '!=', '')->get(),
             ];
-            view()->share($data);
+            view()->share($not);
         });
     }
 }

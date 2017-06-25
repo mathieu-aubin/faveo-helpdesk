@@ -29,13 +29,6 @@ class UserController extends Controller
     public function __construct()
     {
         $this->middleware('board');
-        //$this->middleware('auth');
-        //SettingsController::language();
-        // $this->port();
-        // $this->host();
-        // $this->password();
-        // $this->encryption();
-        // $this->email();
     }
 
     /**
@@ -45,21 +38,18 @@ class UserController extends Controller
      */
     public function getArticle(Article $article, Category $category, Settings $settings)
     {
-        $settings = $settings->first();
-        $pagination = $settings->pagination;
-        if (Auth::check()) {
-            if (\Auth::user()->role == 'user') {
-                $article = $article->where('status', '1');
-            }
-        } else {
+        $setting = $settings->first();
+        $pagination = $setting->pagination;
+        if (!Auth::check() || \Auth::user()->role == 'user') {
             $article = $article->where('status', '1');
         }
         $article = $article->where('type', '1');
+        $article = $article->orderBy('publish_time', 'desc');
         $article = $article->paginate($pagination);
-        // dd($article);
+
         $article->setPath('article-list');
         $categorys = $category->get();
-        // $time = $this->timezone($utc);
+
         return view('themes.default1.client.kb.article-list.articles', compact('time', 'categorys', 'article'));
     }
 
@@ -105,7 +95,7 @@ class UserController extends Controller
                 ->orWhere('slug', 'LIKE', '%'.$search.'%')
                 ->orWhere('description', 'LIKE', '%'.$search.'%')
                 ->paginate($pagination);
-        $result->setPath('search');
+        $result->setPath('search?s='.$search);
         $categorys = $category->get();
 
         return view('themes.default1.client.kb.article-list.search', compact('categorys', 'result'));
@@ -124,21 +114,20 @@ class UserController extends Controller
         date_default_timezone_set($tz);
         $date = \Carbon\Carbon::now()->toDateTimeString();
         $arti = $article->where('slug', $slug);
-        if (Auth::check()) {
-            if (\Auth::user()->role == 'user') {
-                $arti = $arti->where('status', '1');
-            }
-        } else {
+
+        if (!Auth::check() || \Auth::user()->role == 'user') {
             $arti = $arti->where('status', '1');
+            $arti = $arti->where('publish_time', '<', $date);
         }
+
         $arti = $arti->where('type', '1');
-        $arti = $arti->where('publish_time', '<', $date);
+
         $arti = $arti->first();
 
         if ($arti) {
             return view('themes.default1.client.kb.article-list.show', compact('arti'));
         } else {
-            return redirect()->back()->with('fails', Lang::get('lang.no_records_on_publish_time'));
+            return redirect('404');
         }
     }
 
@@ -244,6 +233,9 @@ class UserController extends Controller
     public function postComment($slug, Article $article, CommentRequest $request, Comment $comment)
     {
         $article = $article->where('slug', $slug)->first();
+        if (!$article) {
+            return Redirect::back()->with('fails', Lang::get('lang.sorry_not_processed'));
+        }
         $id = $article->id;
         $comment->article_id = $id;
         if ($comment->fill($request->input())->save()) {
@@ -256,8 +248,11 @@ class UserController extends Controller
     public function getPage($name, Page $page)
     {
         $page = $page->where('slug', $name)->first();
-        //$this->timezone($page->created_at);
-        return view('themes.default1.client.kb.article-list.pages', compact('page'));
+        if ($page) {
+            return view('themes.default1.client.kb.article-list.pages', compact('page'));
+        } else {
+            return Redirect::back()->with('fails', Lang::get('lang.sorry_not_processed'));
+        }
     }
 
     public static function port()

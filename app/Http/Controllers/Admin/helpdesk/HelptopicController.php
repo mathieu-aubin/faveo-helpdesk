@@ -40,7 +40,7 @@ class HelptopicController extends Controller
     }
 
     /**
-     * Display a listing of the resource.
+     * Display a listing of the helptopic.
      *
      * @param type Help_topic $topic
      *
@@ -58,7 +58,7 @@ class HelptopicController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Show the form for creating a new helptopic.
      *
      * @param type Priority   $priority
      * @param type Department $department
@@ -85,9 +85,9 @@ class HelptopicController extends Controller
             $departments = $department->get();
             $topics = $topic->get();
             $forms = $form->get();
-            $agents = $agent->where('role', '=', 'agent')->get();
+            $agents = $agent->where('role', '!=', 'user')->where('active', '=', 1)->orderBy('first_name')->get();
             $slas = $sla->get();
-            $priority = $priority->get();
+            $priority = Ticket_Priority::where('status', '=', 1)->get();
 
             return view('themes.default1.admin.helpdesk.manage.helptopic.create', compact('priority', 'departments', 'topics', 'forms', 'agents', 'slas'));
         } catch (Exception $e) {
@@ -96,7 +96,7 @@ class HelptopicController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a newly created helptpoic in storage.
      *
      * @param type Help_topic       $topic
      * @param type HelptopicRequest $request
@@ -128,7 +128,7 @@ class HelptopicController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Show the form for editing the specified helptopic.
      *
      * @param type            $id
      * @param type Priority   $priority
@@ -143,12 +143,12 @@ class HelptopicController extends Controller
     public function edit($id, Ticket_Priority $priority, Department $department, Help_topic $topic, Forms $form, Sla_plan $sla)
     {
         try {
-            $agents = User::where('role', '=', 'agent')->get();
+            $agents = User::where('role', '!=', 'user')->where('active', '=', 1)->orderBy('first_name')->get();
             $departments = $department->get();
             $topics = $topic->whereId($id)->first();
             $forms = $form->get();
             $slas = $sla->get();
-            $priority = $priority->get();
+            $priority = Ticket_Priority::where('status', '=', 1)->get();
             $sys_help_topic = \DB::table('settings_ticket')
                                 ->select('help_topic')
                                 ->where('id', '=', 1)->first();
@@ -160,7 +160,7 @@ class HelptopicController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the specified helptopic in storage.
      *
      * @param type                 $id
      * @param type Help_topic      $topic
@@ -201,7 +201,7 @@ class HelptopicController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified helptopic from storage.
      *
      * @param type int        $id
      * @param type Help_topic $topic

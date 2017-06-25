@@ -14,21 +14,46 @@ class="active"
 
 @section('PageHeader')
 <h1>{{Lang::get('lang.tickets')}}</h1>
+<style>
+.tooltip1 {
+    position: relative;
+    /*display: inline-block;*/
+    /*border-bottom: 1px dotted black;*/
+}
+
+.tooltip1 .tooltiptext {
+    visibility: hidden;
+    width: 100%;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+
+    /* Position the tooltip */
+    position: absolute;
+    z-index: 1;
+}
+
+.tooltip1:hover .tooltiptext {
+    visibility: visible;
+}
+</style>
 @stop
 @section('content')
 <?php
 $date_time_format = UTC::getDateTimeFormat();
 if (Auth::user()->role == 'agent') {
     $dept = App\Model\helpdesk\Agent\Department::where('id', '=', Auth::user()->primary_dpt)->first();
-    $tickets = App\Model\helpdesk\Ticket\Tickets::where('status', '=', 1)->where('dept_id', '=', $dept->id)->orderBy('id', 'DESC')->paginate(20);
+    $tickets = App\Model\helpdesk\Ticket\Tickets::whereIn('status', array(1, 7))->where('dept_id', '=', $dept->id)->orderBy('id', 'DESC')->count();
 } else {
-    $tickets = App\Model\helpdesk\Ticket\Tickets::where('status', '=', 1)->orderBy('id', 'DESC')->paginate(20);
+    $tickets = App\Model\helpdesk\Ticket\Tickets::whereIn('status', array(1, 7))->orderBy('id', 'DESC')->count();
 }
 ?>
 <!-- Main content -->
 <div class="box box-primary">
     <div class="box-header with-border">
-        <h3 class="box-title">{!! Lang::get('lang.inbox') !!} </h3> <small id="title_refresh">{!! $tickets->total() !!} {!! Lang::get('lang.tickets') !!}</small>
+        <h3 class="box-title">{!! Lang::get('lang.inbox') !!} </h3> <small id="title_refresh">{!! $tickets !!} {!! Lang::get('lang.tickets') !!}</small>
     </div><!-- /.box-header -->
 
     <div class="box-body ">
@@ -49,79 +74,22 @@ if (Auth::user()->role == 'agent') {
         @endif
         {!! Form::open(['id'=>'modalpopup', 'route'=>'select_all','method'=>'post']) !!}
         <!--<div class="mailbox-controls">-->
-            <!-- Check all button -->
-            <a class="btn btn-default btn-sm checkbox-toggle"><i class="fa fa-square-o"></i></a>
-            {{-- <a class="btn btn-default btn-sm" id="click"><i class="fa fa-refresh"></i></a> --}}
-            <input type="submit" class="submit btn btn-default text-orange btn-sm" id="delete" name="submit" value="{!! Lang::get('lang.delete') !!}">
-            <input type="submit" class="submit btn btn-default text-yellow btn-sm" id="close" name="submit" value="{!! Lang::get('lang.close') !!}">
-            <button type="button" class="btn btn-sm btn-default text-green" id="Edit_Ticket" data-toggle="modal" data-target="#MergeTickets"><i class="fa fa-code-fork"> </i> {!! Lang::get('lang.merge') !!}</button>
+        <!-- Check all button -->
+        <a class="btn btn-default btn-sm checkbox-toggle"><i class="fa fa-square-o"></i></a>
+        {{-- <a class="btn btn-default btn-sm" id="click"><i class="fa fa-refresh"></i></a> --}}
+
+        <input type="submit" class="submit btn btn-default text-orange btn-sm" id="delete" name="submit" value="{!! Lang::get('lang.delete') !!}">
+        <input type="submit" class="submit btn btn-default text-yellow btn-sm" id="close" name="submit" value="{!! Lang::get('lang.close') !!}">
+        <button type="button" class="btn btn-sm btn-default text-green" id="Edit_Ticket" data-toggle="modal" data-target="#MergeTickets"><i class="fa fa-code-fork"> </i> {!! Lang::get('lang.merge') !!}</button>
         <!--</div>-->
+        
+        <button type="button" class="btn btn-sm btn-default" id="assign_Ticket" data-toggle="modal" data-target="#AssignTickets" style="display: none;"><i class="fa fa-hand-o-right"> </i> {!! Lang::get('lang.assign') !!}</button>
+        <p><p/>
         <div class="mailbox-messages" id="refresh">
             <!--datatable-->
-            {!! Datatable::table()
-            ->addColumn(
-            "",
-            Lang::get('lang.subject'),
-            Lang::get('lang.ticket_id'),
-            Lang::get('lang.priority'),
-            Lang::get('lang.from'),
-            Lang::get('lang.assigned_to'),
-            Lang::get('lang.last_activity'))
-            ->setUrl(route('get.inbox.ticket'))
-            ->setOptions('aoColumnDefs',array(
-            array(
-            'render' => "function ( data, type, row ) {
-            var t = row[6].split(/[- :,/ :,. /]/);
-            var d = new Date(t[0], t[1]-1, t[2], t[3], t[4], t[5]);
-            <!--  -->
-            var dtf= '$date_time_format';
-            if(dtf==1) {
-            dtf = 'D/MMM/YYYY hh:mm:ss A';
-            } else if(dtf==2) {
-            dtf = 'D MMM, YYYY hh:mm:ss A';
-            } else if(dtf==3) {
-            dtf = 'D-MMM-YYYY hh:mm:ss A';
-            } else if(dtf==4) {
-            dtf = 'MMM/D/YYYY hh:mm:ss A';
-            } else if(dtf==5) {
-            dtf = 'MMM D, YYYY hh:mm:ss A';
-            } else if(dtf==6) {
-            dtf = 'MMM-D-YYYY hh:mm:ss A';
-            } else if(dtf==7) {
-            dtf = 'YYYY/MMM/D hh:mm:ss A';
-            } else if(dtf==8) {
-            dtf = 'YYYY, MMM D hh:mm:ss A';
-            } else if(dtf==9) {
-            dtf = 'YYYY-MMM-D hh:mm:ss A';
-            }
-            return  moment(d).format(dtf);
-            <!-- //return d; -->
-            }", 
-            'aTargets' => array(6))
-            ))
-            ->setOrder(array(6=>'desc'))  
-            ->setClass('table table-hover table-bordered table-striped')
-            ->setCallbacks("fnCreatedRow", 'function( nRow, aData, iDataIndex ) {
-            var str = aData[3];
-            if(str.search("#000") == -1) {
-            $("td", nRow).css({"background-color":"#F3F3F3", "font-weight":"600", "border-bottom":"solid 0.5px #ddd", "border-right":"solid 0.5px #F3F3F3"});
-            $("td", nRow).mouseenter(function(){
-            $("td", nRow).css({"background-color":"#DEDFE0", "font-weight":"600", "border-bottom":"solid 0.5px #ddd", "border-right":"solid 0.5px #DEDFE0"});
-            });
-            $("td", nRow).mouseleave(function(){
-            $("td", nRow).css({"background-color":"#F3F3F3", "font-weight":"600", "border-bottom":"solid 0.5px #ddd","border-right":"solid 0.5px #F3F3F3"});
-            });
-            } else {
-            $("td", nRow).css({"background-color":"white", "border-bottom":"solid 0.5px #ddd", "border-right":"solid 0.5px white"});
-            $("td", nRow).mouseenter(function(){
-            $("td", nRow).css({"background-color":"#DEDFE0", "border-bottom":"solid 0.5px #ddd", "border-right":"solid 0.5px #DEDFE0"});
-            });
-            $("td", nRow).mouseleave(function(){
-            $("td", nRow).css({"background-color":"white", "border-bottom":"solid 0.5px #ddd", "border-right":"solid 0.5px white"});
-            });   
-            }
-            }')          
-            ->render();!!}
+            {!!$table->render('vendor.Chumper.template')!!}
+             
+            
             <!-- /.datatable -->
         </div><!-- /.mail-box-messages -->
         {!! Form::close() !!}
@@ -191,7 +159,41 @@ if (Auth::user()->role == 'agent') {
         </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
 </div><!-- /.modal -->
-
+<!-- Assign ticket model-->
+<div class="modal fade" id="AssignTickets">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" id="assign-close" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">{!! Lang::get('lang.assign-ticket') !!} </h4>
+            </div><!-- /.modal-header-->
+            <div class ="modal-body">
+                <div class="row">
+                    <div class="col-md-4">
+                    </div>
+                    <div class="col-md-6" id="assign_loader"  style="display:none;">
+                        <img src="{{asset("lb-faveo/media/images/gifloader.gif")}}"><br/><br/><br/>
+                    </div><!-- /.merge-loader -->
+                </div>
+                <div id="assign_body">
+                        <div class="row">
+                            <div class="col-md-12">
+                                {!! Form::open(['id'=>'assign-form','method' => 'PATCH'] )!!}
+                                <label>{!! Lang::get('lang.whome_do_you_want_to_assign_ticket') !!}</label>
+                                <select class="form-control" id="select-assign-agent"  name="assign_to" data-placeholder="{!! Lang::get('lang.select_agent') !!}" style="width: 100%;"><option value=""></option></select>
+                            </div>
+                        </div>
+                    </div><!-- mereg-body-form -->
+                </div><!-- merge-body -->
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default pull-left" data-dismiss="modal" id="dismis2">{!! Lang::get('lang.close') !!}</button>
+                <input  type="submit" id="merge-btn" class="btn btn-primary pull-right" value="{!! Lang::get('lang.assign') !!}"></input>
+                {!! Form::close() !!}
+            </div><!-- /.modal-footer -->
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+<!-- Assign ticket model-->
 <!-- Modal -->   
 <div class="modal fade in" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="false" style="display: none; padding-right: 15px;background-color: rgba(0, 0, 0, 0.7);">
     <div class="modal-dialog" role="document">
@@ -212,14 +214,14 @@ if (Auth::user()->role == 'agent') {
         </div>
     </div>
 </div>
-
-
+{!! $table->script('vendor.Chumper.ticket-javascript') !!}
 <script>
+   
     var t_id = [];
     var option = null;
-    $(function() {
+    $(function () {
         //Enable check and uncheck all functionality
-        $(".checkbox-toggle").click(function() {
+        $(".checkbox-toggle").click(function () {
             var clicks = $(this).data('clicks');
             if (clicks) {
                 //Uncheck all checkboxes
@@ -234,24 +236,26 @@ if (Auth::user()->role == 'agent') {
         });
     });
 
-    $(function() {
+    $(function () {
         // Enable check and uncheck all functionality
 
-        $(".checkbox-toggle").click(function() {
+        $(".checkbox-toggle").click(function () {
             var clicks = $(this).data('clicks');
             if (clicks) {
                 //Uncheck all checkboxes
                 $("input[type='checkbox']", ".mailbox-messages").iCheck("uncheck");
                 // alert($("input[type='checkbox']").val());
-                t_id = $('.selectval').map(function() {
+                t_id = $('.selectval').map(function () {
                     return $(this).val();
                 }).get();
+                showAssign(t_id);
                 // alert(checkboxValues);
             } else {
                 //Check all checkboxes
                 $("input[type='checkbox']", ".mailbox-messages").iCheck("check");
                 // alert('Hallo');
                 t_id = [];
+                showAssign(t_id);
             }
             $(this).data("clicks", !clicks);
 
@@ -261,8 +265,8 @@ if (Auth::user()->role == 'agent') {
     });
 
 
-    $(document).ready(function() { /// Wait till page is loaded
-        $('#click').click(function() {
+    $(document).ready(function () { /// Wait till page is loaded
+        $('#click').click(function () {
             $('#refresh').load('inbox #refresh');
             $('#title_refresh').load('inbox #title_refresh');
             $('#count_refresh').load('inbox #count_refresh');
@@ -271,17 +275,17 @@ if (Auth::user()->role == 'agent') {
 
         $(".select2").select2();
 
-        $('#delete').on('click', function() {
+        $('#delete').on('click', function () {
             option = 0;
             $('#myModalLabel').html("{{Lang::get('lang.delete-tickets')}}");
         });
 
-        $('#close').on('click', function() {
+        $('#close').on('click', function () {
             option = 1;
             $('#myModalLabel').html("{{Lang::get('lang.close-tickets')}}");
         });
 
-        $("#modalpopup").on('submit', function(e) {
+        $("#modalpopup").on('submit', function (e) {
             e.preventDefault();
             var msg = "{{Lang::get('lang.confirm')}}";
             var values = getValues();
@@ -296,15 +300,15 @@ if (Auth::user()->role == 'agent') {
             $("#myModal").css("display", "block");
         });
 
-        $(".closemodal, .no").click(function() {
+        $(".closemodal, .no").click(function () {
             $("#myModal").css("display", "none");
         });
 
-        $(".closemodal, .no").click(function() {
+        $(".closemodal, .no").click(function () {
             $("#myModal").css("display", "none");
         });
 
-        $('.yes').click(function() {
+        $('.yes').click(function () {
             var values = getValues();
             if (values == "") {
                 $("#myModal").css("display", "none");
@@ -322,14 +326,14 @@ if (Auth::user()->role == 'agent') {
         });
 
         function getValues() {
-            var values = $('.selectval:checked').map(function() {
+            var values = $('.selectval:checked').map(function () {
                 return $(this).val();
             }).get();
             return values;
         }
 
         //checking merging tickets
-        $('#MergeTickets').on('show.bs.modal', function() {
+        $('#MergeTickets').on('show.bs.modal', function () {
 
             // alert("hi");
             $.ajax({
@@ -337,11 +341,11 @@ if (Auth::user()->role == 'agent') {
                 url: "{{route('check.merge.tickets',0)}}",
                 dataType: "html",
                 data: {data1: t_id},
-                beforeSend: function() {
+                beforeSend: function () {
                     $("#merge_body").hide();
                     $("#merge_loader").show();
                 },
-                success: function(response) {
+                success: function (response) {
                     if (response == 0) {
                         $("#merge_body").show();
                         $("#merge-succ-alert").hide();
@@ -375,7 +379,7 @@ if (Auth::user()->role == 'agent') {
                             url: "{{ route('get.merge.tickets',0) }}",
                             dataType: "html",
                             data: {data1: t_id},
-                            success: function(data) {
+                            success: function (data) {
                                 $('#select-merge-parent').html(data);
                             }
                             // return false;
@@ -386,17 +390,17 @@ if (Auth::user()->role == 'agent') {
         });
 
         //submit merging form
-        $('#merge-form').on('submit', function() {
+        $('#merge-form').on('submit', function () {
             $.ajax({
                 type: "POST",
                 url: "{!! url('merge-tickets/') !!}/" + t_id,
                 dataType: "json",
                 data: $(this).serialize(),
-                beforeSend: function() {
+                beforeSend: function () {
                     $("#merge_body").hide();
                     $("#merge_loader").show();
                 },
-                success: function(response) {
+                success: function (response) {
                     if (response == 0) {
                         $("#merge_body").show();
                         $("#merge-succ-alert").hide();
@@ -417,16 +421,56 @@ if (Auth::user()->role == 'agent') {
                         var message = "{{Lang::get('lang.merge-success')}}";
                         $("#merge-succ-alert").show();
                         $('#message-merge-succ').html(message);
-                        setInterval(function() {
+                        setTimeout(function () {
                             $("#alert11").hide();
-                            setTimeout(function() {
-                                var link = document.querySelector('#load-inbox');
-                                if (link) {
-                                    link.click();
-                                }
-                            }, 100);
+                            location.reload();
                         }, 1000);
                     }
+                }
+            })
+            return false;
+        });
+
+        $('#AssignTickets').on('show.bs.modal', function() {
+            $.ajax({
+                type: "POST",
+                url: "{{route('get-agents')}}",
+                dataType: "html",
+                beforeSend: function() {
+                    $("#assign_body").hide();
+                    $("#assign_loader").show();
+                },
+                success: function(data) {
+                    $("#assign_loader").hide();
+                    $("#assign_body").show();
+                    $('#select-assign-agent').html(data);
+                }
+            });
+        });
+
+        // Assign a ticket
+        $('#assign-form').on('submit', function() {
+            $.ajax({
+                type: "POST",
+                url: "../ticket/assign/"+t_id,
+                dataType: "html",
+                data: $(this).serialize(),
+                beforeSend: function() {
+                $("#assign_body").hide();
+                    $("#assign_loader").show();
+                },
+                success: function(response) {
+                    if (response == 1)
+                    {
+                        location.reload();
+                        var message = "Success!";
+                            $("#alert11").show();
+                            $('#message-success1').html(message);
+                            setInterval(function(){$("#dismiss11").trigger("click"); }, 2000);
+                    }
+                    $("#assign_body").show();
+                    $("#assign_loader").hide();
+                    $("#dismis4").trigger("click");
                 }
             })
             return false;
@@ -437,17 +481,27 @@ if (Auth::user()->role == 'agent') {
         if (document.getElementById(id).checked) {
             t_id.push(id);
             // alert(t_id);
-        } else if(document.getElementById(id).checked === undefined){
+        } else if (document.getElementById(id).checked === undefined) {
             var index = t_id.indexOf(id);
-            if (index === -1){
+            if (index === -1) {
                 t_id.push(id);
-            } else{
+            } else {
                 t_id.splice(index, 1);
             }
         } else {
             var index = t_id.indexOf(id);
             t_id.splice(index, 1);
             // alert(t_id);
+        }
+        showAssign(t_id);
+    }
+
+    function showAssign(t_id)
+    {
+        if (t_id.length >= 1) {
+            $('#assign_Ticket').css('display', 'inline');
+        } else {
+            $('#assign_Ticket').css('display', 'none');
         }
     }
 </script>

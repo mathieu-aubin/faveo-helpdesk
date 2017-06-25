@@ -38,13 +38,6 @@ class HomeController extends Controller
         return view('themes/default1/admin/dashboard');
     }
 
-    public function getsmtp()
-    {
-        $smtp = \App\Model\helpdesk\Email\Smtp::where('id', '=', '1')->first();
-
-        return $smtp->host;
-    }
-
     public function getdata()
     {
         return \View::make('emails/notifications/agent');

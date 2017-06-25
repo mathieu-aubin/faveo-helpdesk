@@ -28,7 +28,7 @@ class User extends Model implements AuthenticatableContract, CanResetPasswordCon
     protected $fillable = ['user_name', 'email', 'password', 'active', 'first_name', 'last_name', 'ban', 'ext', 'mobile', 'profile_pic',
         'phone_number', 'company', 'agent_sign', 'account_type', 'account_status',
         'assign_group', 'primary_dpt', 'agent_tzone', 'daylight_save', 'limit_access',
-        'directory_listing', 'vacation_mode', 'role', 'internal_note', 'country_code', ];
+        'directory_listing', 'vacation_mode', 'role', 'internal_note', 'country_code', 'not_accept_ticket', 'is_delete', ];
 
     /**
      * The attributes excluded from the model's JSON form.
@@ -39,11 +39,149 @@ class User extends Model implements AuthenticatableContract, CanResetPasswordCon
 
     public function getProfilePicAttribute($value)
     {
-        //$n =1;
+        $info = $this->avatar();
+        $pic = null;
+        if ($info) {
+            $pic = $this->checkArray('avatar', $info);
+        }
+        if (!$pic && $value) {
+            $pic = '';
+            $file = asset('uploads/profilepic/'.$value);
+            if ($file) {
+                $type = pathinfo($file, PATHINFO_EXTENSION);
+                $data = file_get_contents($file);
+                $pic = 'data:image/'.$type.';base64,'.base64_encode($data);
+            }
+        }
         if (!$value) {
-            return \Gravatar::src($this->attributes['email']);
-        } else {
-            return asset('lb-faveo/media/profilepic/'.$value);
+            $pic = \Gravatar::src($this->attributes['email']);
+        }
+
+        return $pic;
+    }
+
+    public function avatar()
+    {
+        $related = 'App\UserAdditionalInfo';
+        $foreignKey = 'owner';
+
+        return $this->hasMany($related, $foreignKey)->select('value')->where('key', 'avatar')->first();
+    }
+
+    public function getOrganizationRelation()
+    {
+        $related = "App\Model\helpdesk\Agent_panel\User_org";
+        $user_relation = $this->hasMany($related, 'user_id');
+        $relation = $user_relation->first();
+        if ($relation) {
+            $org_id = $relation->org_id;
+            $orgs = new \App\Model\helpdesk\Agent_panel\Organization();
+            $org = $orgs->where('id', $org_id);
+
+            return $org;
         }
     }
+
+    public function getOrganization()
+    {
+        $name = '';
+        if ($this->getOrganizationRelation()) {
+            $org = $this->getOrganizationRelation()->first();
+            if ($org) {
+                $name = $org->name;
+            }
+        }
+
+        return $name;
+    }
+
+    public function getOrgWithLink()
+    {
+        $name = '';
+        $org = $this->getOrganization();
+        if ($org !== '') {
+            $orgs = $this->getOrganizationRelation()->first();
+            if ($orgs) {
+                $id = $orgs->id;
+                $name = '<a href='.url('organizations/'.$id).'>'.ucfirst($org).'</a>';
+            }
+        }
+
+        return $name;
+    }
+
+    public function getEmailAttribute($value)
+    {
+        if (!$value) {
+            $value = \Lang::get('lang.not-available');
+        }
+
+        return $value;
+    }
+
+    public function getExtraInfo($id = '')
+    {
+        if ($id === '') {
+            $id = $this->attributes['id'];
+        }
+        $info = new UserAdditionalInfo();
+        $infos = $info->where('owner', $id)->lists('value', 'key')->toArray();
+
+        return $infos;
+    }
+
+    public function checkArray($key, $array)
+    {
+        $value = '';
+        if (is_array($array)) {
+            if (array_key_exists($key, $array)) {
+                $value = $array[$key];
+            }
+        }
+
+        return $value;
+    }
+
+    public function twitterLink()
+    {
+        $html = '';
+        $info = $this->getExtraInfo();
+        $username = $this->checkArray('username', $info);
+        if ($username !== '') {
+            $html = "<a href='https://twitter.com/".$username."' target='_blank'><i class='fa fa-twitter'> </i> Twitter</a>";
+        }
+
+        return $html;
+    }
+
+    public function name()
+    {
+        $first_name = $this->first_name;
+        $last_name = $this->last_name;
+        $name = $this->user_name;
+        if ($first_name !== '' && $first_name !== null) {
+            if ($last_name !== '' && $last_name !== null) {
+                $name = $first_name.' '.$last_name;
+            } else {
+                $name = $first_name;
+            }
+        }
+
+        return $name;
+    }
+
+    public function getFullNameAttribute()
+    {
+        return $this->name();
+    }
+
+//    public function save() {
+//        dd($this->id);
+//        parent::save();
+//    }
+
+//    public function save(array $options = array()) {
+//        parent::save($options);
+//        dd($this->where('id',$this->id)->select('first_name','last_name','user_name','email')->get()->toJson());
+//    }
 }
